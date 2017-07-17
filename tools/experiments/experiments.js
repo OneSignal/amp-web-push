@@ -58,6 +58,12 @@ const EXPERIMENTS = [
         'README.md#amp-dev-channel',
   },
   {
+    id: 'amp-web-push',
+    name: 'Enable AMP web push',
+    spec: 'https://github.com/ampproject/amphtml/blob/master/extensions/' +
+        'amp-web-push/0.1/amp-web-push.md',
+  },
+  {
     id: 'ad-type-custom',
     name: 'Activates support for custom (self-serve) advertisements',
     spec: 'https://github.com/ampproject/amphtml/blob/master/ads/custom.md',
@@ -279,7 +285,7 @@ const EXPERIMENTS = [
     spec: 'https://github.com/ampproject/amphtml/blob/master/extensions/' +
         'amp-ad-network-doubleclick-impl/' +
         'amp-ad-network-doubleclick-impl-internal.md',
-  },
+  }
 ];
 
 if (getMode().localDev) {
