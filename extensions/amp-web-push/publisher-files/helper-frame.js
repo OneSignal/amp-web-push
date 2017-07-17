@@ -1,3 +1,19 @@
+/**
+ * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 class AmpWebPushHelperFrame {
   constructor(options) {
     if (options && options.debug) {
@@ -110,6 +126,22 @@ class AmpWebPushHelperFrame {
   }
 
   /**
+   * Tries to decode a URI component, falling back to opt_fallback (or an empty
+   * string)
+   *
+   * @param {string} component
+   * @param {string=} opt_fallback
+   * @return {string}
+   */
+  tryDecodeUriComponent(component, fallback = '') {
+    try {
+      return decodeURIComponent(/*REVIEW*/component);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  /**
    * Parses the query string of an URL. This method returns a simple key/value
    * map. If there are duplicate keys the latest value is returned.
    *
@@ -128,8 +160,8 @@ class AmpWebPushHelperFrame {
     let match;
     const regex = /(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;
     while ((match = regex.exec(queryString))) {
-      const name = decodeURIComponent(match[1]).trim();
-      const value = match[2] ? decodeURIComponent(match[2]).trim() : '';
+      const name = this.tryDecodeUriComponent(match[1]).trim();
+      const value = match[2] ? this.tryDecodeUriComponent(match[2]).trim() : '';
       params[name] = value;
     }
     return params;

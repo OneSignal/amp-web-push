@@ -1,4 +1,20 @@
 /**
+ * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+ /**
  * A Promise-based PostMessage helper to ease back-and-forth replies.
  *
  * This class is included separately a second time, by websites running
@@ -183,7 +199,7 @@ class WindowMessenger {
       this.messagePort.addEventListener('message',
         this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      remoteWindowContext.postMessage({
+      remoteWindowContext.postMessage(/*REVIEW*/{
         topic: WindowMessenger.Topics.CONNECT_HANDSHAKE
       }, expectedRemoteOrigin === '*' ?
           '*' :
@@ -315,7 +331,7 @@ class WindowMessenger {
      origin, otherwise the message is not sent. Since we just got a message, we
      already know the receipient's origin.
      */
-    this.messagePort.postMessage(payload);
+    this.messagePort.postMessage(/*REVIEW*/payload);
 
     return new Promise(resolve => {
       this.messages[payload.id] = {
@@ -342,7 +358,7 @@ class WindowMessenger {
       data: data
     }
     this.log(`Sending ${topic}:`, data);
-    this.messagePort.postMessage(payload);
+    this.messagePort.postMessage(/*REVIEW*/payload);
 
     return new Promise(resolve => {
       this.messages[payload.id] = {

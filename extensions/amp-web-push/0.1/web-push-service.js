@@ -1,6 +1,23 @@
-import {getMode} from '../../../src/mode';
+/**
+ * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+import { getMode } from '../../../src/mode';
 import {isExperimentOn} from '../../../src/experiments';
 import { dev, user } from '../../../src/log';
+import { urls } from '../../../src/config';
 import { CSS } from '../../../build/amp-web-push-0.1.css';
 import IFrame from './iframe';
 import WindowMessenger from './window-messenger';
@@ -81,7 +98,7 @@ export class WebPushService {
     }
 
     // Install action handlers
-    actionServiceForDoc(this.ampdoc).installActionHandler(
+    actionServiceForDoc(this.ampdoc).installActionHandler(/*REVIEW*/
       this.ampdoc.getElementById(TAG), this.handleAction_.bind(this)
     );
 
@@ -161,7 +178,7 @@ export class WebPushService {
     /** @const @private {boolean} */
     const isExperimentEnabled = isExperimentOn(this.ampdoc.win, TAG);
     user().assert(isExperimentEnabled, `Experiment "${TAG}" is disabled. ` +
-      `Enable it on https://cdn.ampproject.org/experiments.html.`);
+      `Enable it on ${urls.cdn}/experiments.html.`);
   }
 
   /**
@@ -472,10 +489,10 @@ export class WebPushService {
 
     if (invocation.method === 'subscribe') {
       actionPromise =
-        this.subscribeForPushNotifications(widgetDomElement.outerHTML);
+        this.subscribeForPushNotifications();
     } else if (invocation.method === "unsubscribe") {
       actionPromise =
-        this.unsubscribeFromPushNotifications(widgetDomElement.outerHTML);
+        this.unsubscribeFromPushNotifications();
     }
 
     actionPromise.then(() => invocation.source.disabled = false);
@@ -492,32 +509,15 @@ export class WebPushService {
   }
 
   static getPopupDimensions() {
-    const dualScreenLeft =
-      window.screenLeft != undefined ? window.screenLeft : screen.left;
-    const dualScreenTop =
-      window.screenTop != undefined ? window.screenTop : screen.top;
-    const clientWidth = document.documentElement.clientWidth ?
-      document.documentElement.clientWidth :
-      screen.width;
-    const clientHeight = document.documentElement.clientHeight ?
-      document.documentElement.clientHeight :
-      screen.height;
-    const currentWindowWidth =
-      window.innerWidth ? window.innerWidth : clientWidth;
-    const currentWindowHeight =
-      window.innerHeight ? window.innerHeight : clientHeight;
-    const popupWidth = 650;
-    const popupHeight = 568;
-    const popupLeft =
-      ((currentWindowWidth / 2) - (popupWidth / 2)) + dualScreenLeft;
-    const popupTop =
-      ((currentWindowHeight / 2) - (popupHeight / 2)) + dualScreenTop;
-
+    /*
+      On mobile, pop ups should show up as a full-screen window. The magic
+      numbers below are just reasonable defaults.
+    */
     return {
-      width: popupWidth,
-      height: popupHeight,
-      left: popupLeft,
-      top: popupTop
+      width: 650,
+      height: 560,
+      left: 0,
+      top: 0
     }
   }
 
@@ -551,7 +551,7 @@ export class WebPushService {
       popupDimensions.top + ', left=' + popupDimensions.left);
   }
 
-  subscribeForPushNotifications(clickedWidgetInfo) {
+  subscribeForPushNotifications() {
     this.registerServiceWorker();
     this.openPopupOrRedirect_();
 
@@ -594,7 +594,7 @@ export class WebPushService {
       });
   }
 
-  unsubscribeFromPushNotifications(clickedWidgetInfo) {
+  unsubscribeFromPushNotifications() {
     return this.unsubscribeFromPushRemotely_().then(() => {
       return this.updateWidgetVisibilities();
     });
