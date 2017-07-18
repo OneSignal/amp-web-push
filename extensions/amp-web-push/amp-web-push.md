@@ -35,7 +35,7 @@ limitations under the License.
   </tr>
   <tr>
     <td width="40%"><strong>Examples</strong></td>
-    <td><a href="https://github.com/ampproject/amphtml/blob/master/examples/amp-web-push.amp.html">reddit.amp.html</a></td>
+    <td><a href="https://github.com/ampproject/amphtml/blob/master/examples/amp-web-push.amp.html">amp-web-push.amp.html</a></td>
   </tr>
 </table>
 
@@ -51,7 +51,7 @@ Developers compose widgets that appear based on a user's subscription state. Wid
 
 <!-- An unsubscription widget -->
 <amp-web-push-widget visibility="subscribed" layout="fixed" width="250" height="80">
-  <button on="tap:amp-web-push.unsubscribe">Unsubscribe me from Notifications</button>
+  <button on="tap:amp-web-push.unsubscribe">Unsubscribe from Notifications</button>
 </amp-web-push-widget>
 ```
 
@@ -82,7 +82,7 @@ amp-web-push requires extra integration on your site. You will need to upload tw
 </script>
 ```
 
-All values are <strong>required</strong>.
+All properties are <strong>required</strong>.
 
 <table>
   <tr>
@@ -92,6 +92,9 @@ All values are <strong>required</strong>.
   <tr>
     <td><code>helperIframeUrl</code></td>
     <td>
+    <p>
+      <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/helper-frame.html">Download <code>helper-iframe.html</code> here</a> and upload it to your site.
+    </p>
     <p>
       The absolute URL to the <code>helper-iframe.html</code> provided HTML file uploaded to your site.
     </p>
@@ -103,6 +106,9 @@ All values are <strong>required</strong>.
   <tr>
     <td><code>permissionDialogUrl</code></td>
     <td>
+    <p>
+      <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/permission-dialog.html">Download <code>permission-dialog.html</code> here</a> and upload it to your site.
+    </p>
     <p>
       The absolute URL to the <code>permission-dialog.html</code> provided HTML file uploaded to your site.
     </p>
