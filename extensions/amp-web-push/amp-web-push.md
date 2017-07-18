@@ -126,6 +126,9 @@ All properties are <strong>required</strong>.
       <p>
         The service worker runs in the background and subscribes and unsubscribes the user from notifications.
       </p>
+      <p>
+         If you develop a custom push solution, <a href="https://github.com/ampproject/amphtml/blob/master/examples/amp-web-push.service-worker.js">see this example on how to make your service worker compatible with amp-web-push</a>.
+       </p>
     </td>
   </tr>
 </table>
