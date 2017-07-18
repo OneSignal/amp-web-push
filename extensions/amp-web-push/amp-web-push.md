@@ -96,7 +96,7 @@ All properties are <strong>required</strong>.
       <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/helper-frame.html">Download <code>helper-iframe.html</code> here</a> and upload it to your site.
     </p>
     <p>
-      The absolute URL to the <code>helper-iframe.html</code> provided HTML file uploaded to your site.
+      The absolute URL, starting with <code>https://</code>, to the <code>helper-iframe.html</code> provided HTML file uploaded to your site.
     </p>
     <p>
       This page enables communication between the AMP page and the service worker which subscribes and unsubscribes the user. This page also helps determines the notification permission status.
@@ -110,7 +110,7 @@ All properties are <strong>required</strong>.
       <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/permission-dialog.html">Download <code>permission-dialog.html</code> here</a> and upload it to your site.
     </p>
     <p>
-      The absolute URL to the <code>permission-dialog.html</code> provided HTML file uploaded to your site.
+      The absolute URL, starting with <code>https://</code>, to the <code>permission-dialog.html</code> provided HTML file uploaded to your site.
     </p>
     <p>
       This page opens as a pop up and prompts for notification permissions.
@@ -121,10 +121,10 @@ All properties are <strong>required</strong>.
     <td><code>serviceWorkerUrl</code></td>
     <td>
       <p>
-        The absolute URL to the JavaScript service worker file uploaded to your site. Use a service worker compatible with amp-web-push.
+        The absolute URL, starting with <code>https://</code>, to the JavaScript service worker file uploaded to your site. Use a service worker compatible with amp-web-push.
       </p>
       <p>
-        The service worker runs in the background and subscribes and unsubscribes the user from notifications.
+        This service worker runs in the background and subscribes and unsubscribes the user from notifications.
       </p>
       <p>
          If you develop a custom push solution, <a href="https://github.com/ampproject/amphtml/blob/master/examples/amp-web-push.service-worker.js">see this example on how to make your service worker compatible with amp-web-push</a>.
