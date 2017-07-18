@@ -199,7 +199,7 @@ class WindowMessenger {
       this.messagePort.addEventListener('message',
         this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      remoteWindowContext.postMessage(/*REVIEW*/{
+      remoteWindowContext./*OK*/postMessage({
         topic: WindowMessenger.Topics.CONNECT_HANDSHAKE
       }, expectedRemoteOrigin === '*' ?
           '*' :
@@ -331,7 +331,7 @@ class WindowMessenger {
      origin, otherwise the message is not sent. Since we just got a message, we
      already know the receipient's origin.
      */
-    this.messagePort.postMessage(/*REVIEW*/payload);
+    this.messagePort./*OK*/postMessage(payload);
 
     return new Promise(resolve => {
       this.messages[payload.id] = {
@@ -358,7 +358,7 @@ class WindowMessenger {
       data: data
     }
     this.log(`Sending ${topic}:`, data);
-    this.messagePort.postMessage(/*REVIEW*/payload);
+    this.messagePort./*OK*/postMessage(payload);
 
     return new Promise(resolve => {
       this.messages[payload.id] = {

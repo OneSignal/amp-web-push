@@ -79,7 +79,7 @@ class WorkerMessenger {
     return this.waitUntilWorkerControlsPage().then(function () {
       self.log(`[Worker Messenger] [IFrame -> SW] Unicasting ` +
         `'${command.toString()}' to service worker.`)
-      navigator.serviceWorker.controller.postMessage(/*REVIEW*/{
+      navigator.serviceWorker.controller./*OK*/postMessage({
         command: command,
         payload: payload
       });

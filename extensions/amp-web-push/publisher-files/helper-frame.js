@@ -135,7 +135,7 @@ class AmpWebPushHelperFrame {
    */
   tryDecodeUriComponent(component, fallback = '') {
     try {
-      return decodeURIComponent(/*REVIEW*/component);
+      return /*OK*/decodeURIComponent(component);
     } catch (e) {
       return fallback;
     }

@@ -98,7 +98,7 @@ export class WebPushService {
     }
 
     // Install action handlers
-    actionServiceForDoc(this.ampdoc).installActionHandler(/*REVIEW*/
+    actionServiceForDoc(this.ampdoc).installActionHandler(
       this.ampdoc.getElementById(TAG), this.handleAction_.bind(this)
     );
 
