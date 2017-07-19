@@ -127,7 +127,7 @@ async function onMessageReceived_Unsubscribe(payload) {
 async function broadcastReply(command, payload) {
   const clients = await self.clients.matchAll({});
   for (let client of clients) {
-    client.postMessage({
+    client./*OK*/postMessage({
       command: command,
       payload: payload
     });
