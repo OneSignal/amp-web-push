@@ -14,19 +14,19 @@
  * the License.
  */
 
-import { getMode } from '../../../src/mode';
+import {getMode} from '../../../src/mode';
 import {isExperimentOn} from '../../../src/experiments';
-import { dev, user } from '../../../src/log';
-import { urls } from '../../../src/config';
-import { CSS } from '../../../build/amp-web-push-0.1.css';
+import {dev, user} from '../../../src/log';
+import {urls} from '../../../src/config';
+import {CSS} from '../../../build/amp-web-push-0.1.css';
 import IFrame from './iframe';
 import WindowMessenger from './window-messenger';
 import {installStyles} from '../../../src/style-installer';
 import {installStylesForShadowRoot} from '../../../src/shadow-embed';
-import { actionServiceForDoc } from '../../../src/services';
-import { closestByTag, openWindowDialog } from '../../../src/dom';
-import { TAG, WIDGET_TAG, NotificationPermission } from './vars';
-import { WebPushWidgetVisibilities } from './amp-web-push-widget';
+import {actionServiceForDoc} from '../../../src/services';
+import {closestByTag, openWindowDialog} from '../../../src/dom';
+import {TAG, WIDGET_TAG, NotificationPermission} from './vars';
+import {WebPushWidgetVisibilities} from './amp-web-push-widget';
 
 export class WebPushService {
 
@@ -96,6 +96,7 @@ export class WebPushService {
       // An error will already be thrown from the config parsing function
       return;
     }
+    this.debug = this.config.debug;
 
     // Install action handlers
     actionServiceForDoc(this.ampdoc).installActionHandler(
@@ -117,7 +118,7 @@ export class WebPushService {
 
     // Create a postMessage() helper to listen for messages
     this.frameMessenger = new WindowMessenger({
-      debug: this.config.debug
+      debug: this.debug
     });
 
     // Load the iFrame asychronously in the background
@@ -239,7 +240,7 @@ export class WebPushService {
     if (new URL(config.serviceWorkerUrl).origin !==
           new URL(config.permissionDialogUrl).origin ||
         new URL(config.permissionDialogUrl).origin !==
-          new URL(config.helperIframeUrl).origin) {
+        new URL(config.helperIframeUrl).origin) {
       throw user().createError(`Your AMP document's configuration JSON ` +
         `properties serviceWorkerUrl, permissionDialogUrl, and ` +
         `helperIframeUrl must all share the same origin.`);

@@ -14,10 +14,11 @@
  * the License.
  */
 
-import { TAG } from './vars';
-import { Layout } from '../../../src/layout';
+import {TAG} from './vars';
+import {Layout} from '../../../src/layout';
 
 
+/** @enum {string} */
 export const WebPushWidgetVisibilities = {
   /**
    * Describes the state when the user is subscribed.

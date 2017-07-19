@@ -14,7 +14,8 @@
  * the License.
  */
 
-import { setStyle } from '../../../src/style';
+import {setStyle} from '../../../src/style';
+import {loadPromise} from '../../../src/event-helper';
 
 export default class IFrame {
   constructor(document, url) {
