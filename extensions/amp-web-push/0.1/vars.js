@@ -14,14 +14,11 @@
  * the License.
  */
 
- /** @const */
 export const EXPERIMENT = 'amp-web-push';
-
-/** @const */
 export const TAG = 'amp-web-push';
-
 export const WIDGET_TAG = TAG + '-widget';
 
+/** @enum {string} */
 export const NotificationPermission = {
   GRANTED: 'granted',
   DENIED: 'denied',
