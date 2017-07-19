@@ -1,6 +1,25 @@
-import { WorkerMessenger } from '../extensions/amp-web-push/0.1/worker-messenger';
+/**
+ * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 
-/*
+ /*
+  This file is an example implementation for a service worker compatible with
+  amp-web-push. This means the service worker accepts window messages (listened
+  to via the service worker's 'message' handler), performs some action, and
+  replies with a result.
+
   The service worker listens to postMessage() messages sent from a lightweight
   invisible iframe on the canonical origin. The AMP page sends messages to this
   "helper" iframe, which then forwards the message to the service worker.
@@ -37,35 +56,55 @@ const WorkerMessengerCommand = {
 
   Also see: https://github.com/w3c/ServiceWorker/issues/1156
 */
-// self.addEventListener('message') is statically added inside the listen()
-// method
-const workerMessenger = new WorkerMessenger();
-workerMessenger.listen();
+self.addEventListener('message', event => {
+  /*
+    Messages sent from amp-web-push have the format:
+
+    - command: A string describing the message topic (e.g.
+      'amp-web-push-subscribe')
+
+    - payload: An optional JavaScript object containing extra data relevant to
+      the command.
+   */
+  const { command, payload } = event.data;
+
+  switch (command) {
+    case WorkerMessengerCommand.AMP_SUBSCRIPION_STATE:
+      onMessageReceived_SubscriptionState(payload);
+      break;
+    case WorkerMessengerCommand.AMP_SUBSCRIBE:
+      onMessageReceived_Subscribe(payload);
+      break;
+    case WorkerMessengerCommand.AMP_UNSUBSCRIBE:
+      onMessageReceived_Unsubscribe(payload);
+      break;
+  }
+});
 
 /*
   Broadcasts a single boolean describing whether the user is subscribed.
  */
-workerMessenger.on(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, async () => {
+async function onMessageReceived_SubscriptionState(payload) {
   const pushSubscription = await self.registration.pushManager.getSubscription();
   if (!pushSubscription) {
-    workerMessenger.broadcast(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, false);
+    broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, false);
   } else {
     const permission = await self.registration.pushManager.permissionState(pushSubscription.options);
     const isSubscribed = !!pushSubscription && permission === "granted";
-    workerMessenger.broadcast(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, isSubscribed);
+    broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, isSubscribed);
   }
-});
+}
 
 /*
   Subscribes the visitor to push.
 
   The broadcast value is null (not used in the AMP page).
  */
-workerMessenger.on(WorkerMessengerCommand.AMP_SUBSCRIBE, async () => {
+async function onMessageReceived_Subscribe(payload) {
   const subscription = await self.registration.pushManager.subscribe();
-  // Forward the push subscription to your server here
-  workerMessenger.broadcast(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
-});
+  // IMPLEMENT: Forward the push subscription to your server here
+  broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
+}
 
 
 /*
@@ -73,9 +112,22 @@ workerMessenger.on(WorkerMessengerCommand.AMP_SUBSCRIBE, async () => {
 
   The broadcast value is null (not used in the AMP page).
  */
-workerMessenger.on(WorkerMessengerCommand.AMP_UNSUBSCRIBE, async () => {
+async function onMessageReceived_Unsubscribe(payload) {
   const subscription = await self.registration.pushManager.subscribe();
   await subscription.unsubscribe();
-  // Forward the unsubscription to your server here
-  workerMessenger.broadcast(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
-});
+  // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
+  broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
+}
+
+/*
+  Sends a postMessage() to all window frames the service worker controls.
+ */
+async function broadcastReply(command, payload) {
+  const clients = await self.clients.matchAll({});
+  for (let client of clients) {
+    client.postMessage({
+      command: command,
+      payload: payload
+    });
+  }
+}
