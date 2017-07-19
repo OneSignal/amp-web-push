@@ -14,6 +14,10 @@
  * the License.
  */
 
+/*
+  Used by WorkerMessenger, this helper class abstracts a map of message topic
+  strings to callback listeners.
+ */
 class WorkerMessengerReplyBuffer {
   constructor() {
     this.replies = {};
@@ -54,6 +58,15 @@ class WorkerMessengerReplyBuffer {
   }
 }
 
+ /**
+ * A Promise-based PostMessage helper to ease back-and-forth replies between
+ * service workers and window frames.
+ *
+ * This class is included separately a second time, by websites running
+ * amp-web-push, as well as by other push vendors, in a remote website's iframe.
+ * It should therefore keep external depenencies to a minimum, since this class
+ * must be transpiled to ES5 and "duplicated" outside of the AMP SDK bundle.
+ */
 class WorkerMessenger {
 
   constructor(options) {
@@ -70,9 +83,15 @@ class WorkerMessenger {
     }
   }
 
+  /*
+    Sends a postMessage() to the service worker controlling the page.
+
+    Waits until the service worker is controlling the page before sending the
+    message.
+   */
   unicast(command, payload) {
     var self = this;
-    if (!(this.isWorkerControllingPage())) {
+    if (!(this.isWorkerControllingPage_())) {
       this.log("[Worker Messenger] The iframe is not controlled by the " +
         "service worker yet. Waiting to unicast...");
     }
@@ -86,8 +105,14 @@ class WorkerMessenger {
     });
   }
 
+  /*
+    Listens for messages for the service worker.
+
+    Waits until the service worker is controlling the page before listening for
+    messages.
+   */
   listen() {
-    if (!(this.isWorkerControllingPage())) {
+    if (!(this.isWorkerControllingPage_())) {
       this.log("[Worker Messenger] The iframe is not controlled by the " +
         "service worker yet. Waiting to listen...");
     }
@@ -96,12 +121,19 @@ class WorkerMessenger {
       self.log("[Worker Messenger] The iframe is now controlled by " +
         "the service worker.");
       navigator.serviceWorker.addEventListener('message',
-        self.onPageMessageReceivedFromServiceWorker.bind(self));
+        self.onPageMessageReceivedFromServiceWorker_.bind(self));
       self.log('[Worker Messenger] IFrame is now listening for messages.');
     });
   }
 
-  onPageMessageReceivedFromServiceWorker(event) {
+  /*
+    Occurs when the page receives a message from the service worker.
+
+    A map of callbacks is checked to see if anyone is listening to the specific
+    message topic. If no one is listening to the message, it is discarded;
+    otherwise, the listener callback is executed.
+   */
+  onPageMessageReceivedFromServiceWorker_(event) {
     const data = event.data;
     const listenerRecords = this.replies.findListenersForMessage(data.command);
     const listenersToRemove = [];
@@ -124,43 +156,69 @@ class WorkerMessenger {
     }
   }
 
+  /*
+    Subscribes a callback to be notified every time a service worker sends a
+    message to the window frame with the specific command.
+   */
   on(command, callback) {
     this.replies.addListener(command, callback, false);
   }
 
+  /*
+    Subscribes a callback to be notified the next time a service worker sends a
+    message to the window frame with the specific command.
+
+    The callback is executed once at most.
+   */
   once(command, callback) {
     this.replies.addListener(command, callback, true);
   }
 
+  /*
+    Unsubscribe a callback from being notified about service worker messages
+    with the specified command.
+   */
   off(command) {
     this.replies.deleteListenerRecords(command);
   }
 
-  isWorkerControllingPage() {
+  /*
+    Service worker postMessage() communication relies on the property
+    navigator.serviceWorker.controller to be non-null. The controller property
+    references the active service worker controlling the page. Without this
+    property, there is no service worker to message.
+
+    The controller property is set when a service worker has successfully
+    registered, installed, and activated a worker, and when a page isn't loaded
+    in a hard refresh mode bypassing the cache.
+
+    It's possible for a service worker to take a second page load to be fully
+    activated.
+   */
+  isWorkerControllingPage_() {
     return navigator.serviceWorker &&
       navigator.serviceWorker.controller &&
       navigator.serviceWorker.controller.state === "activated";
   }
 
   /**
-   * For pages, waits until one of our workers is activated.
-   *
-   * For service workers, waits until the registration is active.
+   * Returns a Promise that is resolved when the the page controlling the
+   * service worker is activated. This Promise never rejects.
    */
   waitUntilWorkerControlsPage() {
     return new Promise(resolve => {
-      if (this.isWorkerControllingPage()) {
+      if (this.isWorkerControllingPage_()) {
         resolve();
       } else {
         navigator.serviceWorker.addEventListener('controllerchange', e => {
           // Service worker has been claimed
-          if (this.isWorkerControllingPage()) {
+          if (this.isWorkerControllingPage_()) {
             resolve();
           } else {
             navigator.serviceWorker.controller.addEventListener(
               'statechange',
               e => {
-                if (this.isWorkerControllingPage()) {
+                if (this.isWorkerControllingPage_()) {
                   // Service worker has been activated
                   resolve();
                 }
