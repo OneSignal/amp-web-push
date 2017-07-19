@@ -27,10 +27,13 @@ class AmpWebPushHelperFrame {
       debug: this.debug
     });
 
-    // For communication between this helper iframe and the service worker
-    this.workerMessenger = new WorkerMessenger({
-      debug: this.debug
-    });
+    /*
+      Describes the messages we allow through from the service worker. Whenever
+      the AMP page sends a 'query service worker' message with a topic string,
+      we add the topic to the allowed list, and wait for the service worker to
+      reply. Once we get a reply, we remove it from the allowed topics.
+     */
+    this.allowedWorkerMessageTopics = {};
   }
 
   /*
@@ -111,9 +114,20 @@ class AmpWebPushHelperFrame {
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
     }
+    new Promise((resolve) => {
+      // Allow this message through, just for the next time it's received
+      this.allowedWorkerMessageTopics[message.topic] = resolve;
 
-    // The AMP message is forwarded to the service worker
-    this.workerMessenger.once(message.topic, workerReplyPayload => {
+      // The AMP message is forwarded to the service worker
+      return this.waitUntilWorkerControlsPage().then(() => {
+        navigator.serviceWorker.controller./*OK*/postMessage({
+          command: message.topic,
+          payload: message.payload
+        });
+      });
+    }).then((workerReplyPayload) => {
+      delete this.allowedWorkerMessageTopics[message.topic];
+
       // The service worker's reply is forwarded back to the AMP page
       return this.replyToFrameWithPayload(
         replyToFrame,
@@ -122,7 +136,6 @@ class AmpWebPushHelperFrame {
         workerReplyPayload
       );
     });
-    this.workerMessenger.unicast(message.topic, message.payload);
   }
 
   /**
@@ -175,6 +188,64 @@ class AmpWebPushHelperFrame {
     return queryParams['parentOrigin'];
   }
 
+  onPageMessageReceivedFromServiceWorker_(event) {
+    const { command, payload } = event.data;
+    const callbackPromiseResolver = this.allowedWorkerMessageTopics[command];
+
+    if (typeof callbackPromiseResolver === "function") {
+      // Resolve the waiting listener with the worker's reply payload
+      callbackPromiseResolver(payload);
+    }
+    // Otherwise, ignore unsolicited messages from the service worker
+  }
+
+  /*
+    Service worker postMessage() communication relies on the property
+    navigator.serviceWorker.controller to be non-null. The controller property
+    references the active service worker controlling the page. Without this
+    property, there is no service worker to message.
+
+    The controller property is set when a service worker has successfully
+    registered, installed, and activated a worker, and when a page isn't loaded
+    in a hard refresh mode bypassing the cache.
+
+    It's possible for a service worker to take a second page load to be fully
+    activated.
+   */
+  isWorkerControllingPage_() {
+    return navigator.serviceWorker &&
+      navigator.serviceWorker.controller &&
+      navigator.serviceWorker.controller.state === "activated";
+  }
+
+  /**
+   * Returns a Promise that is resolved when the the page controlling the
+   * service worker is activated. This Promise never rejects.
+   */
+  waitUntilWorkerControlsPage() {
+    return new Promise(resolve => {
+      if (this.isWorkerControllingPage_()) {
+        resolve();
+      } else {
+        navigator.serviceWorker.addEventListener('controllerchange', e => {
+          // Service worker has been claimed
+          if (this.isWorkerControllingPage_()) {
+            resolve();
+          } else {
+            navigator.serviceWorker.controller.addEventListener(
+              'statechange',
+              e => {
+                if (this.isWorkerControllingPage_()) {
+                  // Service worker has been activated
+                  resolve();
+                }
+              });
+          }
+        });
+      }
+    });
+  }
+
   run() {
     this.ampMessenger.on(
       WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
@@ -193,7 +264,10 @@ class AmpWebPushHelperFrame {
       this.onAmpPageMessageReceived_ServiceWorkerQuery.bind(this)
     );
 
-    this.workerMessenger.listen();
+    this.waitUntilWorkerControlsPage().then(() => {
+      navigator.serviceWorker.addEventListener('message',
+        this.onPageMessageReceivedFromServiceWorker_.bind(this));
+    });
     this.ampMessenger.listen([this.getParentOrigin()]);
   }
 }
