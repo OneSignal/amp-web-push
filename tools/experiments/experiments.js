@@ -285,7 +285,7 @@ const EXPERIMENTS = [
     spec: 'https://github.com/ampproject/amphtml/blob/master/extensions/' +
         'amp-ad-network-doubleclick-impl/' +
         'amp-ad-network-doubleclick-impl-internal.md',
-  }
+  },
 ];
 
 if (getMode().localDev) {

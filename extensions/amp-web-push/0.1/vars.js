@@ -16,7 +16,6 @@
 
 export const EXPERIMENT = 'amp-web-push';
 export const TAG = 'amp-web-push';
-export const WIDGET_TAG = TAG + '-widget';
 
 /** @enum {string} */
 export const NotificationPermission = {
@@ -26,5 +25,5 @@ export const NotificationPermission = {
     Note: PushManager.permissionState() returns 'prompt';
     Notification.permission returns 'default'
    */
-  DEFAULT: 'default'
-}
+  DEFAULT: 'default',
+};

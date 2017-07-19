@@ -42,7 +42,7 @@ export default class IFrame {
     this.domElement.src = this.url;
 
     this.document.body.appendChild(this.domElement);
-    this.loadPromise  = loadPromise(this.domElement);
+    this.loadPromise = loadPromise(this.domElement);
     return this.whenReady();
   }
 

@@ -34,13 +34,13 @@ export const WebPushWidgetVisibilities = {
    * subscribing in Incognito mode.
    */
   BLOCKED: 'blocked',
-}
+};
 
 /** @enum {string} */
 export const WebPushWidgetActions = {
   SUBSCRIBE: 'subscribe',
   UNSUBSCRIBE: 'unsubscribe',
-}
+};
 
 export class WebPushWidget extends AMP.BaseElement {
 
@@ -60,9 +60,9 @@ export class WebPushWidget extends AMP.BaseElement {
     this.element.classList.add('invisible');
 
     this.registerAction(WebPushWidgetActions.SUBSCRIBE,
-      this.onSubscribe.bind(this));
+        this.onSubscribe.bind(this));
     this.registerAction(WebPushWidgetActions.UNSUBSCRIBE,
-      this.onUnsubscribe.bind(this));
+        this.onUnsubscribe.bind(this));
   }
 
   onSubscribe() {

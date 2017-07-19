@@ -16,16 +16,15 @@
 
 import {getMode} from '../../../src/mode';
 import {isExperimentOn} from '../../../src/experiments';
-import {dev, user} from '../../../src/log';
+import {user} from '../../../src/log';
 import {urls} from '../../../src/config';
 import {CSS} from '../../../build/amp-web-push-0.1.css';
 import IFrame from './iframe';
 import WindowMessenger from './window-messenger';
 import {installStyles} from '../../../src/style-installer';
 import {installStylesForShadowRoot} from '../../../src/shadow-embed';
-import {actionServiceForDoc} from '../../../src/services';
-import {closestByTag, openWindowDialog} from '../../../src/dom';
-import {TAG, WIDGET_TAG, NotificationPermission} from './vars';
+import {openWindowDialog} from '../../../src/dom';
+import {TAG, NotificationPermission} from './vars';
 import {WebPushWidgetVisibilities} from './amp-web-push-widget';
 
 export class WebPushService {
@@ -42,8 +41,8 @@ export class WebPushService {
     affecting the page state.
    */
   static get PERMISSION_POPUP_URL_FRAGMENT() {
-    return 'amp-web-push-subscribing=yes'
-  }
+    return 'amp-web-push-subscribing=yes';
+  };
 
   static get AMP_VERSION_INITIAL() {
     return 1;
@@ -82,11 +81,11 @@ export class WebPushService {
   * Occurs when the DOM is ready to be parsed.
   */
   initialize_() {
-    this.log_("amp-web-push extension starting up.");
+    this.log_('amp-web-push extension starting up.');
 
     // Exit early if web push isn't supported
     if (!this.environmentSupportsWebPush()) {
-      this.log_("Web push is not supported.");
+      this.log_('Web push is not supported.');
       return;
     }
 
@@ -100,26 +99,25 @@ export class WebPushService {
 
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
     // postMessage() calls from
-    this.config.helperIframeUrl.indexOf('?') == -1 ? '?' : '&'
-
     const helperUrlHasQueryParams =
       this.config.helperIframeUrl.indexOf('?') !== -1;
     const helperUrlQueryParamPrefix = helperUrlHasQueryParams ? '&' : '?';
     const finalIframeUrl =
-      `${this.config.helperIframeUrl}${helperUrlQueryParamPrefix}parentOrigin=${window.location.origin}`;
+      `${this.config.helperIframeUrl}${helperUrlQueryParamPrefix}` +
+      `parentOrigin=${window.location.origin }`;
 
     // Create a hidden iFrame to check subscription state
     this.iframe = new IFrame(this.ampdoc.win.document, finalIframeUrl);
 
     // Create a postMessage() helper to listen for messages
     this.frameMessenger = new WindowMessenger({
-      debug: this.debug
+      debug: this.debug,
     });
 
     // Load the iFrame asychronously in the background
     this.iframe.load().then(() => {
       this.log_(`Helper frame ${this.config.helperIframeUrl} DOM loaded. ` +
-        `Connecting to the frame via postMessage()...`);
+        'Connecting to the frame via postMessage()...');
       this.frameMessenger.connect(this.iframe.domElement.contentWindow, new
         URL(this.config.helperIframeUrl).origin);
     }).then(() => {
@@ -133,7 +131,7 @@ export class WebPushService {
 
   isContinuingSubscriptionFromRedirect() {
     return location.search.indexOf(
-      WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
+        WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
   }
 
   removePermissionPopupUrlFragmentFromUrl(url) {
@@ -141,7 +139,7 @@ export class WebPushService {
       url.replace(`?${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
     urlWithoutFragment =
       urlWithoutFragment.replace(
-        `&${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
+          `&${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
     return urlWithoutFragment;
   }
 
@@ -159,8 +157,8 @@ export class WebPushService {
     // Only prints if the user turned on debug/verbose mode
     if (this.debug) {
       // For easy debugging, print out the origin this code is running on
-      const logPrefix = `${location.origin}:`
-      var allArgs = Array.prototype.concat.apply([logPrefix], arguments);
+      const logPrefix = `${location.origin}:`;
+      const allArgs = Array.prototype.concat.apply([logPrefix], arguments);
       console.log.apply(null, allArgs);
     }
   }
@@ -185,8 +183,8 @@ export class WebPushService {
     const configJsonNode =
       this.ampdoc.getRootNode().querySelector('script#' + TAG);
     if (!configJsonNode) {
-      throw user().createError(`Your AMP document must include a ` +
-        `<script id="amp-web-push" type="application/json">.`);
+      throw user().createError('Your AMP document must include a ' +
+        '<script id="amp-web-push" type="application/json">.');
     }
     return configJsonNode.textContent;
   }
@@ -197,48 +195,48 @@ export class WebPushService {
   */
   parseConfigJson(configJson) {
     if (!configJson || !configJson.trim()) {
-      throw user().createError(`Your AMP document's configuration ` +
-        `JSON must not be empty.`);
+      throw user().createError('Your AMP document\'s configuration ' +
+        'JSON must not be empty.');
     }
     let config;
     try {
       config = JSON.parse(/** @type {string} */(configJson));
     } catch (e) {
-      throw user().createError(`Your AMP document's configuration ` +
-        `JSON must be valid JSON. Failed to parse JSON: ` + e);
+      throw user().createError('Your AMP document\'s configuration ' +
+        'JSON must be valid JSON. Failed to parse JSON: ' + e);
     }
 
     if (!config.helperIframeUrl ||
       !this.isValidHelperOrPermissionDialogUrl_(config.helperIframeUrl)) {
-      throw user().createError(`Your AMP document's configuration JSON ` +
-        `must have a valid helperIframeUrl property. It should begin with ` +
-        `the https:// protocol and point to the provided lightweight ` +
-        `template page provided for AMP messaging.`);
+      throw user().createError('Your AMP document\'s configuration JSON ' +
+        'must have a valid helperIframeUrl property. It should begin with ' +
+        'the https:// protocol and point to the provided lightweight ' +
+        'template page provided for AMP messaging.');
     }
 
     if (!config.permissionDialogUrl ||
       !this.isValidHelperOrPermissionDialogUrl_(config.permissionDialogUrl)) {
-      throw user().createError(`Your AMP document's configuration JSON must ` +
-        `have a valid permissionDialogUrl property. It should begin with ` +
-        `the https:// protocol and point to the provided template page ` +
-        `for showing the permission prompt.`);
+      throw user().createError('Your AMP document\'s configuration JSON must ' +
+        'have a valid permissionDialogUrl property. It should begin with ' +
+        'the https:// protocol and point to the provided template page ' +
+        'for showing the permission prompt.');
     }
 
     if (!config.serviceWorkerUrl ||
       new URL(config.serviceWorkerUrl).protocol !== 'https:') {
-      throw user().createError(`Your AMP document's configuration JSON must ` +
-        `have a valid serviceWorkerUrl property. It should begin with the ` +
-        `https:// protocol and point to the service worker JavaScript file ` +
-        `to be installed.`);
+      throw user().createError('Your AMP document\'s configuration JSON must ' +
+        'have a valid serviceWorkerUrl property. It should begin with the ' +
+        'https:// protocol and point to the service worker JavaScript file ' +
+        'to be installed.');
     }
 
     if (new URL(config.serviceWorkerUrl).origin !==
           new URL(config.permissionDialogUrl).origin ||
         new URL(config.permissionDialogUrl).origin !==
         new URL(config.helperIframeUrl).origin) {
-      throw user().createError(`Your AMP document's configuration JSON ` +
-        `properties serviceWorkerUrl, permissionDialogUrl, and ` +
-        `helperIframeUrl must all share the same origin.`);
+      throw user().createError('Your AMP document\'s configuration JSON ' +
+        'properties serviceWorkerUrl, permissionDialogUrl, and ' +
+        'helperIframeUrl must all share the same origin.');
     }
     return config;
   }
@@ -290,8 +288,9 @@ export class WebPushService {
    */
   queryHelperFrame_(messageTopic, message) {
     return this.iframe.whenReady().then(() => {
-      return this.frameMessenger.send(messageTopic, message)
-    }).then(([replyPayload, _]) => {
+      return this.frameMessenger.send(messageTopic, message);
+    }).then(result => {
+      const replyPayload = result[0];
       if (replyPayload.success) {
         return replyPayload.result;
       } else {
@@ -308,59 +307,59 @@ export class WebPushService {
     require code changes in the helper frame (which lives on the canonical
     origin).
    */
-  queryServiceWorker_(messageTopic, message, callback) {
+  queryServiceWorker_(messageTopic, message) {
     return this.queryHelperFrame_(
-      WindowMessenger.Topics.SERVICE_WORKER_QUERY,
-      {
-        topic: messageTopic,
-        payload: message
-      }
+        WindowMessenger.Topics.SERVICE_WORKER_QUERY,
+        {
+          topic: messageTopic,
+          payload: message,
+        }
     );
   }
 
   queryNotificationPermission_() {
     return this.queryHelperFrame_(
-      WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
-      null
+        WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
+        null
     );
   }
 
   queryServiceWorkerState_() {
     return this.queryHelperFrame_(
-      WindowMessenger.Topics.SERVICE_WORKER_STATE,
-      null
+        WindowMessenger.Topics.SERVICE_WORKER_STATE,
+        null
     );
   }
 
   registerServiceWorker() {
     return this.queryHelperFrame_(
-      WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
-      {
-        workerUrl: this.config.serviceWorkerUrl,
-        registrationOptions: this.config.serviceWorkerRegistrationOptions ||
-        { scope: '/' }
-      }
+        WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
+        {
+          workerUrl: this.config.serviceWorkerUrl,
+          registrationOptions: this.config.serviceWorkerRegistrationOptions ||
+          {scope: '/'},
+        }
     );
   }
 
   querySubscriptionStateRemotely_() {
     return this.queryServiceWorker_(
-      'amp-web-push-subscription-state',
-      null
+        'amp-web-push-subscription-state',
+        null
     );
   }
 
   subscribeForPushRemotely_() {
     return this.queryServiceWorker_(
-      'amp-web-push-subscribe',
-      null
+        'amp-web-push-subscribe',
+        null
     );
   }
 
   unsubscribeFromPushRemotely_() {
     return this.queryServiceWorker_(
-      'amp-web-push-unsubscribe',
-      null
+        'amp-web-push-unsubscribe',
+        null
     );
   }
 
@@ -391,7 +390,8 @@ export class WebPushService {
       .querySelectorAll(`${TAG}[visibility=${widgetCategoryName}]`);
     const visibilityCssClassName = 'invisible';
 
-    for (const widgetDomElement of widgetDomElements) {
+    for (let i = 0; i < widgetDomElements.length; i++) {
+      const widgetDomElement = widgetDomElements[i];
       if (isVisible) {
         widgetDomElement.classList.remove(visibilityCssClassName);
       } else {
@@ -401,37 +401,35 @@ export class WebPushService {
   }
 
   getSubscriptionStateReplyVersion_(subscriptionStateReply) {
-    if (typeof subscriptionStateReply === "boolean") {
+    if (typeof subscriptionStateReply === 'boolean') {
       return 1;
     }
   }
 
   updateWidgetVisibilities() {
-    const widgetDomElements = this.ampdoc.getRootNode()
-      .querySelectorAll(TAG);
-
     return this.queryNotificationPermission_().then(notificationPermission => {
       if (notificationPermission === NotificationPermission.DENIED) {
-        this.updateWidgetVisibilities_NotificationPermissionsBlocked();
+        this.updateWidgetVisibilitiesNotificationPermissionsBlocked();
       } else {
-        return this.isServiceWorkerActivated_().then(isServiceWorkerActivated => {
-          if (isServiceWorkerActivated) {
-            this.updateWidgetVisibilities_ServiceWorkerActivated();
-          } else {
-            this.updateWidgetVisibilities_Unsubscribed();
-          }
-        });
+        return this.isServiceWorkerActivated_().then(
+            isServiceWorkerActivated => {
+              if (isServiceWorkerActivated) {
+                this.updateWidgetVisibilitiesServiceWorkerActivated();
+              } else {
+                this.updateWidgetVisibilitiesUnsubscribed();
+              }
+            });
       }
     });
   }
 
-  updateWidgetVisibilities_NotificationPermissionsBlocked() {
+  updateWidgetVisibilitiesNotificationPermissionsBlocked() {
     this.setWidgetVisibilities(WebPushWidgetVisibilities.UNSUBSCRIBED, false);
     this.setWidgetVisibilities(WebPushWidgetVisibilities.SUBSCRIBED, false);
     this.setWidgetVisibilities(WebPushWidgetVisibilities.BLOCKED, true);
   }
 
-  updateWidgetVisibilities_ServiceWorkerActivated() {
+  updateWidgetVisibilitiesServiceWorkerActivated() {
     return this.querySubscriptionStateRemotely_().then(reply => {
       /*
         This Promise will never resolve if the service worker does not support
@@ -442,18 +440,18 @@ export class WebPushService {
           const isSubscribed = reply;
           if (isSubscribed) {
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.UNSUBSCRIBED, false);
+                WebPushWidgetVisibilities.UNSUBSCRIBED, false);
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.SUBSCRIBED, true);
+                WebPushWidgetVisibilities.SUBSCRIBED, true);
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.BLOCKED, false);
+                WebPushWidgetVisibilities.BLOCKED, false);
           } else {
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.UNSUBSCRIBED, true);
+                WebPushWidgetVisibilities.UNSUBSCRIBED, true);
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.SUBSCRIBED, false);
+                WebPushWidgetVisibilities.SUBSCRIBED, false);
             this.setWidgetVisibilities(
-              WebPushWidgetVisibilities.BLOCKED, false);
+                WebPushWidgetVisibilities.BLOCKED, false);
           }
           break;
         default:
@@ -466,7 +464,7 @@ export class WebPushService {
     });
   }
 
-  updateWidgetVisibilities_Unsubscribed() {
+  updateWidgetVisibilitiesUnsubscribed() {
     this.setWidgetVisibilities(WebPushWidgetVisibilities.UNSUBSCRIBED, true);
     this.setWidgetVisibilities(WebPushWidgetVisibilities.SUBSCRIBED, false);
     this.setWidgetVisibilities(WebPushWidgetVisibilities.BLOCKED, false);
@@ -485,7 +483,7 @@ export class WebPushService {
     this.openPopupOrRedirect_();
 
     this.popupMessenger = new WindowMessenger({
-      debug: this.debug
+      debug: this.debug,
     });
     this.popupMessenger.listen([this.config.permissionDialogUrl]);
 
@@ -497,30 +495,32 @@ export class WebPushService {
     */
 
     return this.onNotificationPermissionRequestInteractedMessage()
-      .then(([permission, reply]) => {
-        switch (permission) {
-          case NotificationPermission.DENIED:
+        .then(result => {
+          const permission = result[0];
+          const reply = result[1];
+          switch (permission) {
+            case NotificationPermission.DENIED:
             // User blocked
-            reply({ closeFrame: true });
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.DEFAULT:
-            // User clicked X
-            reply({ closeFrame: true });
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.GRANTED:
-            // User allowed
-            reply({ closeFrame: true });
-            this.subscribeForPushRemotely_().then(() => {
+              reply({closeFrame: true});
               return this.updateWidgetVisibilities();
-            });
-            break;
-          default:
-            throw new Error("Unexpected permission value:", permission);
-            break;
-        }
-      });
+              break;
+            case NotificationPermission.DEFAULT:
+            // User clicked X
+              reply({closeFrame: true});
+              return this.updateWidgetVisibilities();
+              break;
+            case NotificationPermission.GRANTED:
+            // User allowed
+              reply({closeFrame: true});
+              this.subscribeForPushRemotely_().then(() => {
+                return this.updateWidgetVisibilities();
+              });
+              break;
+            default:
+              throw new Error('Unexpected permission value:', permission);
+              break;
+          }
+        });
   }
 
   /**
@@ -540,10 +540,10 @@ export class WebPushService {
   onNotificationPermissionRequestInteractedMessage() {
     return new Promise(resolve => {
       this.popupMessenger.on(
-        WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
-        (message, replyToFrame) => {
-          resolve([message, replyToFrame]);
-        });
+          WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
+          (message, replyToFrame) => {
+            resolve([message, replyToFrame]);
+          });
     });
   }
 
@@ -556,8 +556,8 @@ export class WebPushService {
       width: 650,
       height: 560,
       left: 0,
-      top: 0
-    }
+      top: 0,
+    };
   }
 
   openPopupOrRedirect_() {
@@ -577,15 +577,17 @@ export class WebPushService {
     // The permission dialog URL, containing the return URL above embedded in a
     // query parameter
     const openingPopupUrl =
-      `${this.config.permissionDialogUrl}${permissionDialogUrlQueryParamPrefix}return=${encodeURIComponent(returningPopupUrl)}`;
+      this.config.permissionDialogUrl +
+      permissionDialogUrlQueryParamPrefix +
+      `return=${encodeURIComponent(returningPopupUrl) }`;
 
     const popupDimensions = WebPushService.getPopupDimensions();
 
-    const popup = openWindowDialog(
-      this.ampdoc.win,
-      openingPopupUrl,
-      '_blank',
-      'scrollbars=yes, width=' +
+    openWindowDialog(
+        this.ampdoc.win,
+        openingPopupUrl,
+        '_blank',
+        'scrollbars=yes, width=' +
       popupDimensions.width + ', height=' + popupDimensions.height + ', top=' +
       popupDimensions.top + ', left=' + popupDimensions.left);
   }
@@ -594,34 +596,34 @@ export class WebPushService {
     // Remove the ?amp-web-push-subscribing=true from the URL without affecting
     // the page contents using the History API
     window.history.replaceState(
-      null,
-      '',
-      this.removePermissionPopupUrlFragmentFromUrl(window.location.href)
+        null,
+        '',
+        this.removePermissionPopupUrlFragmentFromUrl(window.location.href)
     );
 
     this.queryNotificationPermission_()
-      .then(permission => {
-        switch (permission) {
-          case NotificationPermission.DENIED:
+        .then(permission => {
+          switch (permission) {
+            case NotificationPermission.DENIED:
             // User blocked
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.DEFAULT:
+              return this.updateWidgetVisibilities();
+              break;
+            case NotificationPermission.DEFAULT:
             // User clicked X
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.GRANTED:
+              return this.updateWidgetVisibilities();
+              break;
+            case NotificationPermission.GRANTED:
             // User allowed
-            this.subscribeForPushRemotely_()
-              .then(() => {
-                return this.updateWidgetVisibilities();
-              });
-            break;
-          default:
-            throw new Error("Unexpected permission value", permission);
-            break;
-        }
-      });
+              this.subscribeForPushRemotely_()
+                  .then(() => {
+                    return this.updateWidgetVisibilities();
+                  });
+              break;
+            default:
+              throw new Error('Unexpected permission value', permission);
+              break;
+          }
+        });
   }
 
   environmentSupportsWebPush() {
@@ -663,6 +665,6 @@ export class WebPushService {
     The helper iframe HTTPS is enforced when checking the configuration.
    */
   isAmpPageHttps() {
-    return location.protocol === "https:";
+    return location.protocol === 'https:';
   }
 }
