@@ -225,8 +225,8 @@ export class WindowMessenger {
   /** @param {!Window} window */
   test(window) {
     const channel = new MessageChannel();
-    window.postMessage('', '*');
-    window.postMessage('', '*', [channel.port2]);
+    window./*OK*/postMessage('', '*');
+    window./*OK*/postMessage('', '*', [channel.port2]);
   }
 
   onConnectConnectionMessageReceived(

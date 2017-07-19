@@ -17,7 +17,6 @@
 tags: {  # amp-web-push
   html_format: AMP
   tag_name: "SCRIPT"
-  satisfies: "amp-web-push extension .js script"
   extension_spec: {
     name: "amp-web-push"
     allowed_versions: "0.1"
@@ -27,8 +26,8 @@ tags: {  # amp-web-push
 }
 tags: {  # <amp-web-push>
   html_format: AMP
-  tag_name: "amp-web-push"
-  requires: "amp-web-push extension .js script"
+  tag_name: "AMP-WEB-PUSH"
+  requires_extension: "amp-web-push"
   attrs: {
     name: "visibility"
     value_regex: "(subscribed|unsubscribed|blocked)"
