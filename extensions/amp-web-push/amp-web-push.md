@@ -82,7 +82,7 @@ amp-web-push requires extra integration on your site. You will need to upload tw
 </script>
 ```
 
-All properties are <strong>required</strong>.
+All properties are <strong>required</strong>, and all URLs must begin with the same origin (e.g. https://example.com).
 
 <table>
   <tr>
@@ -122,6 +122,9 @@ All properties are <strong>required</strong>.
     <td>
       <p>
         The absolute URL, starting with <code>https://</code>, to the JavaScript service worker file uploaded to your site. Use a service worker compatible with amp-web-push.
+      </p>
+      <p>
+         If possible, make the service worker available at the root of your site (e.g. https://your-site.com/service-worker.js) instead of a subfolder. amp-web-push is restricted to working at the same folder level (subfolders included) the service worker is uploaded to unless the service worker is served with an HTTP response header of 'Service-Worker-Allowed: /'.
       </p>
       <p>
         This service worker runs in the background and subscribes and unsubscribes the user from notifications.

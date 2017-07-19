@@ -235,6 +235,15 @@ export class WebPushService {
         `https:// protocol and point to the service worker JavaScript file ` +
         `to be installed.`);
     }
+
+    if (new URL(config.serviceWorkerUrl).origin !==
+          new URL(config.permissionDialogUrl).origin ||
+        new URL(config.permissionDialogUrl).origin !==
+          new URL(config.helperIframeUrl).origin) {
+      throw user().createError(`Your AMP document's configuration JSON ` +
+        `properties serviceWorkerUrl, permissionDialogUrl, and ` +
+        `helperIframeUrl must all share the same origin.`);
+    }
     return config;
   }
 
