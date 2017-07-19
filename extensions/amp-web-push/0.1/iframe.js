@@ -32,18 +32,8 @@ export default class IFrame {
     this.domElement.src = this.url;
 
     this.document.body.appendChild(this.domElement);
-
-    this.loadPromise = new Promise((resolve, reject) => {
-      this.domElement.onerror = e => {
-        this.state = 'error';
-        reject(e);
-      };
-      this.domElement.onload = () => {
-        this.state = 'loaded';
-        resolve();
-      };
-    });
-    return this.loadPromise;
+    this.loadPromise  = loadPromise(this.domElement);
+    return this.whenReady();
   }
 
   whenReady() {
