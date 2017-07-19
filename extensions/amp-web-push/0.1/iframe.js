@@ -17,15 +17,24 @@
 import {setStyle} from '../../../src/style';
 import {loadPromise} from '../../../src/event-helper';
 
+/**
+ * Wraps the creation of an invisible sandboxed IFrame. Exposes a load() method
+ * that resolves a Promise when the iFrame has finished loading.
+ */
 export default class IFrame {
   constructor(document, url) {
     this.document = document;
     this.url = url;
-    this.state = 'new';
     this.domElement = null;
     this.loadPromise = null;
   }
 
+  /**
+   * Returns a Promise that resolves when the IFrame has finished constructing
+   * and loading.
+   *
+   * @return {!Promise}
+   */
   load() {
     this.domElement = this.document.createElement('iframe');
     setStyle(this.domElement, 'display', 'none');
