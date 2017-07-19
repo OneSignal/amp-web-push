@@ -94,14 +94,16 @@ async function onMessageReceived_SubscriptionState(payload) {
     broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, isSubscribed);
   }
 }
-
 /*
   Subscribes the visitor to push.
 
   The broadcast value is null (not used in the AMP page).
  */
 async function onMessageReceived_Subscribe(payload) {
-  const subscription = await self.registration.pushManager.subscribe();
+  const subscription = await self.registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: 'fake-demo-key',
+  });
   // IMPLEMENT: Forward the push subscription to your server here
   broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
 }
@@ -113,7 +115,7 @@ async function onMessageReceived_Subscribe(payload) {
   The broadcast value is null (not used in the AMP page).
  */
 async function onMessageReceived_Unsubscribe(payload) {
-  const subscription = await self.registration.pushManager.subscribe();
+  const subscription = await self.registration.pushManager.getSubscription();
   await subscription.unsubscribe();
   // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
   broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
