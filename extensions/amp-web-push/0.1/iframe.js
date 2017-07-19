@@ -21,7 +21,7 @@ import {loadPromise} from '../../../src/event-helper';
  * Wraps the creation of an invisible sandboxed IFrame. Exposes a load() method
  * that resolves a Promise when the iFrame has finished loading.
  */
-export default class IFrame {
+export class IFrame {
   constructor(document, url) {
     this.document = document;
     this.url = url;

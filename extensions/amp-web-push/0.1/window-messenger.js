@@ -23,7 +23,7 @@
  * since this class must be transpiled to ES5 and "duplicated" outside of the
  * AMP SDK bundle.
  */
-export default class WindowMessenger {
+export class WindowMessenger {
 
   /*
    * Set debug to true to get console logs anytime a message is received,
@@ -39,9 +39,11 @@ export default class WindowMessenger {
      * keep track of replies and sends.
      */
     this.messages = {};
-    /*
+    /**
      * A map of string topic names to callbacks listeners interested in replies
      * to the topic.
+     *
+     * @type {(Object<string,Array>|null)}
      */
     this.listeners = {};
     this.debug = options.debug;
@@ -94,7 +96,7 @@ export default class WindowMessenger {
         );
       window.addEventListener('message',
           this.onListenConnectionMessageReceivedProc);
-      this.log('Listening for a connection message...');
+      console.log('Listening for a connection message...');
     }).then(() => {
       this.send(WindowMessenger.Topics.CONNECT_HANDSHAKE, null);
       this.connected = true;
@@ -131,21 +133,21 @@ export default class WindowMessenger {
     rejectPromise,
     {data: message, origin, ports: messagePorts}
   ) {
-    this.log('Window message for listen() connection received:', message);
+    console.log('Window message for listen() connection received:', message);
     if (!this.isAllowedOrigin(origin, allowedOrigins)) {
-      this.log(`Discarding connection message from ${origin} because it ` +
+      console.log(`Discarding connection message from ${origin} because it ` +
         'isn\'t an allowed origin:', message, ' (allowed origins are)',
           allowedOrigins);
       return;
     }
     if (!message ||
          message.topic !== WindowMessenger.Topics.CONNECT_HANDSHAKE) {
-      this.log('Discarding connection message because it did not contain ' +
+      console.log('Discarding connection message because it did not contain ' +
         'our expected handshake:', message);
       return;
     }
 
-    this.log('Received expected connection handshake message:', message);
+    console.log('Received expected connection handshake message:', message);
     // This was our expected handshake message Remove our message handler so we
     // don't get spammed with cross-domain messages
     window.removeEventListener('message',
@@ -193,8 +195,7 @@ export default class WindowMessenger {
             this,
             this.messagePort,
             expectedRemoteOrigin,
-            resolve,
-            reject)
+            resolve)
         ;
       this.messagePort.addEventListener('message',
           this.onConnectConnectionMessageReceivedProc);
@@ -204,7 +205,7 @@ export default class WindowMessenger {
       }, expectedRemoteOrigin === '*' ?
           '*' :
           new URL(expectedRemoteOrigin).origin, [this.channel.port2]);
-      this.log(`Opening message channel to ${expectedRemoteOrigin}...`);
+      console.log(`Opening message channel to ${expectedRemoteOrigin}...`);
     });
   }
 
@@ -214,7 +215,7 @@ export default class WindowMessenger {
     resolvePromise) {
     // This is the remote frame's reply to our initial handshake topic message
     this.connected = true;
-    this.log(`Messenger channel to ${expectedRemoteOrigin} established.`);
+    console.log(`Messenger channel to ${expectedRemoteOrigin} established.`);
     // Remove our message handler
     messagePort.removeEventListener('message',
         this.onConnectConnectionMessageReceivedProc);
@@ -236,16 +237,6 @@ export default class WindowMessenger {
     };
   }
 
-  log() {
-    // Only prints if the user turned on debug/verbose mode
-    if (this.debug) {
-      // For easy debugging, print out the origin this code is running on
-      const logPrefix = `${location.origin}:`;
-      const allArgs = Array.prototype.concat.apply([logPrefix], arguments);
-      console.log.apply(null, allArgs);
-    }
-  }
-
   /*
    * Occurs when a message is received via MessageChannel.
    * Messages received here are trusted (they aren't postMessaged() over).
@@ -258,7 +249,8 @@ export default class WindowMessenger {
         // Set new incoming message data on existing message
       existingMessage.message = message.data;
       if (this.debug) {
-        this.log(`Received reply for topic '${message.topic}':`, message.data);
+        console.log(`Received reply for topic '${message.topic}':`,
+            message.data);
       }
       promiseResolver([
         message.data,
@@ -270,7 +262,7 @@ export default class WindowMessenger {
         return;
       }
       if (this.debug) {
-        this.log(`Received new message for topic '${message.topic}':`,
+        console.log(`Received new message for topic '${message.topic}':`,
             message.data);
       }
       for (let i = 0; i < listeners.length; i++) {
@@ -299,9 +291,9 @@ export default class WindowMessenger {
    */
   off(topic, callback) {
     if (callback) {
-      const callbackIndex = this.listeners.topic.indexOf(callback);
+      const callbackIndex = this.listeners[topic].indexOf(callback);
       if (callbackIndex !== -1) {
-        this.listeners.splice(callbackIndex, 1);
+        this.listeners[topic].splice(callbackIndex, 1);
       }
     } else {
       // No specific callback provided; remove all listeners for topic
@@ -351,7 +343,7 @@ export default class WindowMessenger {
       topic,
       data,
     };
-    this.log(`Sending ${topic}:`, data);
+    console.log(`Sending ${topic}:`, data);
     this.messagePort./*OK*/postMessage(payload);
 
     return new Promise(resolve => {

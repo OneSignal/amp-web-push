@@ -19,8 +19,8 @@ import {isExperimentOn} from '../../../src/experiments';
 import {user} from '../../../src/log';
 import {urls} from '../../../src/config';
 import {CSS} from '../../../build/amp-web-push-0.1.css';
-import IFrame from './iframe';
-import WindowMessenger from './window-messenger';
+import {IFrame} from './iframe';
+import {WindowMessenger} from './window-messenger';
 import {installStyles} from '../../../src/style-installer';
 import {installStylesForShadowRoot} from '../../../src/shadow-embed';
 import {openWindowDialog} from '../../../src/dom';
@@ -75,6 +75,26 @@ export class WebPushService {
     this.initializePromise_ = ampdoc.whenReady().then(() => {
       return this.initialize_();
     });
+
+    /** @private {Object} */
+    this.config_ = {
+      helperIframeUrl: null,
+      permissionDialogUrl: null,
+      serviceWorkerUrl: null,
+      debug: null,
+    };
+
+    /** @private {boolean} */
+    this.debug_ = false;
+
+    /** @private {./iframe.IFrame} */
+    this.iframe_ = null;
+
+    /** @private {./window-messenger.WindowMessenger} */
+    this.frameMessenger_ = null;
+
+    /** @private {./window-messenger.WindowMessenger} */
+    this.popupMessenger_ = null;
   }
 
   /*
@@ -90,36 +110,36 @@ export class WebPushService {
     }
 
     // Read amp-web-push configuration
-    this.config = this.parseConfigJson(this.getConfigAsText());
-    if (!this.config) {
+    this.config_ = this.parseConfigJson(this.getConfigAsText());
+    if (!this.config_) {
       // An error will already be thrown from the config parsing function
       return;
     }
-    this.debug = this.config.debug;
+    this.debug_ = this.config_.debug;
 
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
     // postMessage() calls from
     const helperUrlHasQueryParams =
-      this.config.helperIframeUrl.indexOf('?') !== -1;
+      this.config_.helperIframeUrl.indexOf('?') !== -1;
     const helperUrlQueryParamPrefix = helperUrlHasQueryParams ? '&' : '?';
     const finalIframeUrl =
-      `${this.config.helperIframeUrl}${helperUrlQueryParamPrefix}` +
+      `${this.config_.helperIframeUrl}${helperUrlQueryParamPrefix}` +
       `parentOrigin=${window.location.origin }`;
 
     // Create a hidden iFrame to check subscription state
-    this.iframe = new IFrame(this.ampdoc.win.document, finalIframeUrl);
+    this.iframe_ = new IFrame(this.ampdoc.win.document, finalIframeUrl);
 
     // Create a postMessage() helper to listen for messages
-    this.frameMessenger = new WindowMessenger({
-      debug: this.debug,
+    this.frameMessenger_ = new WindowMessenger({
+      debug: this.debug_,
     });
 
     // Load the iFrame asychronously in the background
-    this.iframe.load().then(() => {
-      this.log_(`Helper frame ${this.config.helperIframeUrl} DOM loaded. ` +
+    this.iframe_.load().then(() => {
+      this.log_(`Helper frame ${this.config_.helperIframeUrl} DOM loaded. ` +
         'Connecting to the frame via postMessage()...');
-      this.frameMessenger.connect(this.iframe.domElement.contentWindow, new
-        URL(this.config.helperIframeUrl).origin);
+      this.frameMessenger_.connect(this.iframe_.domElement.contentWindow, new
+        URL(this.config_.helperIframeUrl).origin);
     }).then(() => {
       if (this.isContinuingSubscriptionFromRedirect()) {
         this.resumeSubscribingForPushNotifications();
@@ -148,18 +168,16 @@ export class WebPushService {
    * extension in the example sandbox. Turns off in unit test mode.
    */
   enableAmpExperimentForDevelopment_() {
-    if ((getMode().localDev && !getMode.test)) {
+    if ((getMode().localDev && !getMode().test)) {
       AMP.toggleExperiment(TAG, true);
     }
   }
 
-  log_() {
+  log_(text) {
     // Only prints if the user turned on debug/verbose mode
-    if (this.debug) {
+    if (this.debug_) {
       // For easy debugging, print out the origin this code is running on
-      const logPrefix = `${location.origin}:`;
-      const allArgs = Array.prototype.concat.apply([logPrefix], arguments);
-      console.log.apply(null, allArgs);
+      console.log.apply(null, [`${location.origin}: ${text}`]);
     }
   }
 
@@ -287,8 +305,8 @@ export class WebPushService {
     This is used by all of our AMP page <-> helper iframe communications.
    */
   queryHelperFrame_(messageTopic, message) {
-    return this.iframe.whenReady().then(() => {
-      return this.frameMessenger.send(messageTopic, message);
+    return this.iframe_.whenReady().then(() => {
+      return this.frameMessenger_.send(messageTopic, message);
     }).then(result => {
       const replyPayload = result[0];
       if (replyPayload.success) {
@@ -335,8 +353,8 @@ export class WebPushService {
     return this.queryHelperFrame_(
         WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
         {
-          workerUrl: this.config.serviceWorkerUrl,
-          registrationOptions: this.config.serviceWorkerRegistrationOptions ||
+          workerUrl: this.config_.serviceWorkerUrl,
+          registrationOptions: this.config_.serviceWorkerRegistrationOptions ||
           {scope: '/'},
         }
     );
@@ -364,16 +382,22 @@ export class WebPushService {
   }
 
   isServiceWorkerActivated_() {
-    return this.queryServiceWorkerState_().then(serviceWorkerState => {
-      const isControllingFrame = serviceWorkerState.isControllingFrame === true;
-      const serviceWorkerHasCorrectUrl =
-        serviceWorkerState.url === this.config.serviceWorkerUrl;
-      const serviceWorkerActivated = serviceWorkerState.state === 'activated';
+    const self = this;
+    return this.queryServiceWorkerState_().then(
+      /** @param {{isControllingFrame:boolean, state:string, url:string}}
+          serviceWorkerState */
+        function(serviceWorkerState) {
+          const isControllingFrame =
+            serviceWorkerState.isControllingFrame === true;
+          const serviceWorkerHasCorrectUrl =
+            serviceWorkerState.url === self.config_.serviceWorkerUrl;
+          const serviceWorkerActivated =
+          serviceWorkerState.state === 'activated';
 
-      return isControllingFrame &&
-        serviceWorkerHasCorrectUrl &&
-        serviceWorkerActivated;
-    });
+          return isControllingFrame &&
+          serviceWorkerHasCorrectUrl &&
+          serviceWorkerActivated;
+        });
   }
 
   /*
@@ -482,10 +506,10 @@ export class WebPushService {
     this.registerServiceWorker();
     this.openPopupOrRedirect_();
 
-    this.popupMessenger = new WindowMessenger({
-      debug: this.debug,
+    this.popupMessenger_ = new WindowMessenger({
+      debug: this.debug_,
     });
-    this.popupMessenger.listen([this.config.permissionDialogUrl]);
+    this.popupMessenger_.listen([this.config_.permissionDialogUrl]);
 
     /*
       At this point, the popup most likely opened and we can communicate with it
@@ -539,7 +563,7 @@ export class WebPushService {
 
   onNotificationPermissionRequestInteractedMessage() {
     return new Promise(resolve => {
-      this.popupMessenger.on(
+      this.popupMessenger_.on(
           WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
           (message, replyToFrame) => {
             resolve([message, replyToFrame]);
@@ -577,7 +601,7 @@ export class WebPushService {
     // The permission dialog URL, containing the return URL above embedded in a
     // query parameter
     const openingPopupUrl =
-      this.config.permissionDialogUrl +
+      this.config_.permissionDialogUrl +
       permissionDialogUrlQueryParamPrefix +
       `return=${encodeURIComponent(returningPopupUrl) }`;
 
