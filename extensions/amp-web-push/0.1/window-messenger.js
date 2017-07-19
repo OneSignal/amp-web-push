@@ -230,15 +230,9 @@ class WindowMessenger {
   static get Topics() {
     return {
       CONNECT_HANDSHAKE: 'topic-connect-handshake',
-      AMP_EXTENSION_CONFIG: 'topic-amp-extension-config',
       NOTIFICATION_PERMISSION_STATE: 'topic-notification-permission-state',
       SERVICE_WORKER_STATE: 'topic-service-worker-state',
-      SUBSCRIPTION_STATE: 'topic-subscription-state',
       SERVICE_WORKER_REGISTRATION: 'topic-service-worker-registration',
-      SUBSCRIBING: 'topic-subscribing',
-      PERMISSION_DIALOG_SHOWN: 'topic-permission-dialog-shown',
-      NOTIFICATION_PERMISSION_RESULT: 'topic-notification-permission-result',
-      UNSUBSCRIBING: 'topic-unsubscribing',
       SERVICE_WORKER_QUERY: 'topic-service-worker-query'
     };
   }
