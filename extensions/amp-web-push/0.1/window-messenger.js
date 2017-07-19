@@ -54,6 +54,7 @@ export class WindowMessenger {
     this.connected = false;
     this.channel = null;
 
+    /** @type {MessagePort} */
     this.messagePort = null;
 
     this.onListenConnectionMessageReceivedProc = null;
@@ -175,7 +176,7 @@ export class WindowMessenger {
     resolvePromise();
   }
 
-  /*
+  /**
    * Establishes a message channel with a listening Messenger on another frame.
    * Only call this if listen() has already been called on the remote frame.
    *
@@ -183,6 +184,8 @@ export class WindowMessenger {
    *   - remoteWindowContext: The Window context to postMessage() to.
    *   - expectedRemoteOrigin: The origin the remote frame is required to be
    *     when receiving the message; the remote message is otherwise discarded.
+   *
+   * @param {!Window} remoteWindowContext
    */
   connect(remoteWindowContext, expectedRemoteOrigin) {
     return new Promise((resolve, reject) => {
@@ -213,14 +216,17 @@ export class WindowMessenger {
       this.messagePort.addEventListener('message',
           this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      remoteWindowContext./*OK*/postMessage(
-          {
-            topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
-          }, expectedRemoteOrigin === '*' ?
-          '*' :
-          new URL(expectedRemoteOrigin).origin, [this.channel.port2]);
+      // remoteWindowContext./*OK*/postMessage(
+      //     dict({a: '1'}), '*', [this.channel.port2]);
       console/*OK*/.log(`Opening channel to ${expectedRemoteOrigin}...`);
     });
+  }
+
+  /** @param {!Window} window */
+  test(window) {
+    const channel = new MessageChannel();
+    window.postMessage('', '*');
+    window.postMessage('', '*', [channel.port2]);
   }
 
   onConnectConnectionMessageReceived(
@@ -280,8 +286,8 @@ export class WindowMessenger {
         return;
       }
       if (this.debug) {
-        console/*OK*/.log(`Received new message for topic '${message['topic']}':`,
-            message['data']);
+        console/*OK*/.log('Received new message for ' +
+          `topic '${message['topic']}': message['data']`);
       }
       for (let i = 0; i < listeners.length; i++) {
         const listener = listeners[i];
