@@ -98,11 +98,6 @@ export class WebPushService {
     }
     this.debug = this.config.debug;
 
-    // Install action handlers
-    actionServiceForDoc(this.ampdoc).installActionHandler(
-      this.ampdoc.getElementById(TAG), this.handleAction_.bind(this)
-    );
-
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
     // postMessage() calls from
     this.config.helperIframeUrl.indexOf('?') == -1 ? '?' : '&'
@@ -384,7 +379,7 @@ export class WebPushService {
 
   /*
     Sets the visibilities of subscription and unsubscription
-    <amp-web-push-widget> elements.
+    <amp-web-push> elements.
 
     Element visibilities change throughout the lifetime of the page: they are
     initially invisible as their visibilties are determined, and then they
@@ -393,7 +388,7 @@ export class WebPushService {
   */
   setWidgetVisibilities(widgetCategoryName, isVisible) {
     const widgetDomElements = this.ampdoc.getRootNode()
-      .querySelectorAll(`${WIDGET_TAG}[visibility=${widgetCategoryName}]`);
+      .querySelectorAll(`${TAG}[visibility=${widgetCategoryName}]`);
     const visibilityCssClassName = 'invisible';
 
     for (const widgetDomElement of widgetDomElements) {
@@ -413,7 +408,7 @@ export class WebPushService {
 
   updateWidgetVisibilities() {
     const widgetDomElements = this.ampdoc.getRootNode()
-      .querySelectorAll(WIDGET_TAG);
+      .querySelectorAll(TAG);
 
     return this.queryNotificationPermission_().then(notificationPermission => {
       if (notificationPermission === NotificationPermission.DENIED) {
@@ -477,35 +472,69 @@ export class WebPushService {
     this.setWidgetVisibilities(WebPushWidgetVisibilities.BLOCKED, false);
   }
 
-  /*
-   * @param {!ActionInvocation} invocation
-   * @private
+  /**
+   * Subscribes the user to web push notifications.
+   *
+   * This action is exposed from this service and is called from the
+   * <amp-web-push> custom element.
+   *
+   * @public
    */
-  handleAction_(invocation) {
-    // Get parent widget this action occurred under
-    const widgetDomElement = closestByTag(invocation.source, WIDGET_TAG);
-    if (!widgetDomElement) {
-      throw user().createError(`A DOM element with attribute ` +
-        `'on="tap:${TAG}.${invocation.method}"' must be within a parent ` +
-        `element named <${WIDGET_TAG}>.`);
-    }
+  subscribe() {
+    this.registerServiceWorker();
+    this.openPopupOrRedirect_();
 
-    if (invocation.event) {
-      invocation.event.preventDefault();
-    }
+    this.popupMessenger = new WindowMessenger({
+      debug: this.debug
+    });
+    this.popupMessenger.listen([this.config.permissionDialogUrl]);
 
-    invocation.source.disabled = true;
-    let actionPromise = Promise.resolve();
+    /*
+      At this point, the popup most likely opened and we can communicate with it
+      via postMessage(). Or, in rare environments like Custom Chrome Tabs, this
+      entire page was redirected and our code will resume with our page is
+      redirected back.
+    */
 
-    if (invocation.method === 'subscribe') {
-      actionPromise =
-        this.subscribeForPushNotifications();
-    } else if (invocation.method === "unsubscribe") {
-      actionPromise =
-        this.unsubscribeFromPushNotifications();
-    }
+    return this.onNotificationPermissionRequestInteractedMessage()
+      .then(([permission, reply]) => {
+        switch (permission) {
+          case NotificationPermission.DENIED:
+            // User blocked
+            reply({ closeFrame: true });
+            return this.updateWidgetVisibilities();
+            break;
+          case NotificationPermission.DEFAULT:
+            // User clicked X
+            reply({ closeFrame: true });
+            return this.updateWidgetVisibilities();
+            break;
+          case NotificationPermission.GRANTED:
+            // User allowed
+            reply({ closeFrame: true });
+            this.subscribeForPushRemotely_().then(() => {
+              return this.updateWidgetVisibilities();
+            });
+            break;
+          default:
+            throw new Error("Unexpected permission value:", permission);
+            break;
+        }
+      });
+  }
 
-    actionPromise.then(() => invocation.source.disabled = false);
+  /**
+   * Unsubscribes a user from web push notifications.
+   *
+   * This action is exposed from this service and is called from the
+   * <amp-web-push> custom element.
+   *
+   * @public
+   */
+  unsubscribe() {
+    return this.unsubscribeFromPushRemotely_().then(() => {
+      return this.updateWidgetVisibilities();
+    });
   }
 
   onNotificationPermissionRequestInteractedMessage() {
@@ -559,55 +588,6 @@ export class WebPushService {
       'scrollbars=yes, width=' +
       popupDimensions.width + ', height=' + popupDimensions.height + ', top=' +
       popupDimensions.top + ', left=' + popupDimensions.left);
-  }
-
-  subscribeForPushNotifications() {
-    this.registerServiceWorker();
-    this.openPopupOrRedirect_();
-
-    this.popupMessenger = new WindowMessenger({
-      debug: this.debug
-    });
-    this.popupMessenger.listen([this.config.permissionDialogUrl]);
-
-    /*
-      At this point, the popup most likely opened and we can communicate with it
-      via postMessage(). Or, in rare environments like Custom Chrome Tabs, this
-      entire page was redirected and our code will resume with our page is
-      redirected back.
-    */
-
-    return this.onNotificationPermissionRequestInteractedMessage()
-      .then(([permission, reply]) => {
-        switch (permission) {
-          case NotificationPermission.DENIED:
-            // User blocked
-            reply({ closeFrame: true });
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.DEFAULT:
-            // User clicked X
-            reply({ closeFrame: true });
-            return this.updateWidgetVisibilities();
-            break;
-          case NotificationPermission.GRANTED:
-            // User allowed
-            reply({ closeFrame: true });
-            this.subscribeForPushRemotely_().then(() => {
-              return this.updateWidgetVisibilities();
-            });
-            break;
-          default:
-            throw new Error("Unexpected permission value:", permission);
-            break;
-        }
-      });
-  }
-
-  unsubscribeFromPushNotifications() {
-    return this.unsubscribeFromPushRemotely_().then(() => {
-      return this.updateWidgetVisibilities();
-    });
   }
 
   resumeSubscribingForPushNotifications() {

@@ -25,9 +25,9 @@ tags: {  # amp-web-push
   }
   attr_lists: "common-extension-attrs"
 }
-tags: {  # <amp-web-push-widget>
+tags: {  # <amp-web-push>
   html_format: AMP
-  tag_name: "AMP-WEB-PUSH-WIDGET"
+  tag_name: "amp-web-push"
   requires: "amp-web-push extension .js script"
   attrs: {
     name: "visibility"

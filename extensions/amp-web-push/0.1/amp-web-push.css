@@ -14,11 +14,11 @@
  * the License.
  */
 
-amp-web-push-widget.invisible {
+amp-web-push.invisible {
   visibility: hidden;
 }
 
-amp-web-push-widget button {
+amp-web-push button {
   border-radius: 2px;
   border: 0;
   box-sizing: border-box;
@@ -37,11 +37,11 @@ amp-web-push-widget button {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
-amp-web-push-widget button:hover {
+amp-web-push button:hover {
   background: #269BF8;
 }
 
-amp-web-push-widget button:active {
+amp-web-push button:active {
   background: #1C91EE;
   transform: scale(0.99);
 }

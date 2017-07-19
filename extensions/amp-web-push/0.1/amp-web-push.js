@@ -30,4 +30,4 @@ import {CSS} from '../../../build/amp-web-push-0.1.css';
 
 
 AMP.registerServiceForDoc(TAG, WebPushService);
-AMP.registerElement(WIDGET_TAG, WebPushWidget, CSS);
+AMP.registerElement(TAG, WebPushWidget, CSS);

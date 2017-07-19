@@ -16,6 +16,7 @@
 
 import {TAG} from './vars';
 import {Layout} from '../../../src/layout';
+import {getServiceForDoc} from '../../../src/service';
 
 
 /** @enum {string} */
@@ -35,6 +36,12 @@ export const WebPushWidgetVisibilities = {
   BLOCKED: 'blocked',
 }
 
+/** @enum {string} */
+export const WebPushWidgetActions = {
+  SUBSCRIBE: 'subscribe',
+  UNSUBSCRIBE: 'unsubscribe',
+}
+
 export class WebPushWidget extends AMP.BaseElement {
 
   /** @param {!AmpElement} element */
@@ -51,5 +58,20 @@ export class WebPushWidget extends AMP.BaseElement {
   buildCallback() {
     // Hide the element
     this.element.classList.add('invisible');
+
+    this.registerAction(WebPushWidgetActions.SUBSCRIBE,
+      this.onSubscribe.bind(this));
+    this.registerAction(WebPushWidgetActions.UNSUBSCRIBE,
+      this.onUnsubscribe.bind(this));
+  }
+
+  onSubscribe() {
+    const webPushService = getServiceForDoc(this.getAmpDoc(), TAG);
+    webPushService.subscribe();
+  }
+
+  onUnsubscribe() {
+    const webPushService = getServiceForDoc(this.getAmpDoc(), TAG);
+    webPushService.unsubscribe();
   }
 }

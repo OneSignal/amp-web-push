@@ -45,14 +45,14 @@ Developers compose widgets that appear based on a user's subscription state. Wid
 
 ```html
 <!-- A subscription widget -->
-<amp-web-push-widget visibility="unsubscribed" layout="fixed" width="250" height="80">
-  <button on="tap:amp-web-push.subscribe">Subscribe to Notifications</button>
-</amp-web-push-widget>
+<amp-web-push id="subscribe-widget-1" visibility="unsubscribed" layout="fixed" width="250" height="80">
+  <button on="tap:subscribe-widget-1.subscribe">Subscribe to Notifications</button>
+</amp-web-push>
 
 <!-- An unsubscription widget -->
-<amp-web-push-widget visibility="subscribed" layout="fixed" width="250" height="80">
-  <button on="tap:amp-web-push.unsubscribe">Unsubscribe from Notifications</button>
-</amp-web-push-widget>
+<amp-web-push id="unsubscribe-widget-1" visibility="subscribed" layout="fixed" width="250" height="80">
+  <button on="tap:unsubscribe-widget-1.unsubscribe">Unsubscribe from Notifications</button>
+</amp-web-push>
 ```
 
 Clicking the subscription widget pops up a page prompting the user for notification permissions and signals the service worker (configured below) to subscribe the user to push in the background. Clicking the unsubscription widget signals the worker to unsubscribe the user from push in the background.
