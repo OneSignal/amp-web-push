@@ -96,7 +96,9 @@ export class WindowMessenger {
         );
       window.addEventListener('message',
           this.onListenConnectionMessageReceivedProc);
-      console.log('Listening for a connection message...');
+      if (this.debug) {
+        console/*OK*/.log('Listening for a connection message...');
+      }
     }).then(() => {
       this.send(WindowMessenger.Topics.CONNECT_HANDSHAKE, null);
       this.connected = true;
@@ -133,21 +135,25 @@ export class WindowMessenger {
     rejectPromise,
     {data: message, origin, ports: messagePorts}
   ) {
-    console.log('Window message for listen() connection received:', message);
+    if (this.debug) {
+      console/*OK*/.log('Window message for listen() connection ' +
+        'received:', message);
+    }
     if (!this.isAllowedOrigin(origin, allowedOrigins)) {
-      console.log(`Discarding connection message from ${origin} because it ` +
-        'isn\'t an allowed origin:', message, ' (allowed origins are)',
-          allowedOrigins);
+      console/*OK*/.log(`Discarding connection message from ${origin} ` +
+        'because it isn\'t an allowed origin:', message, ' (allowed ' +
+        ' origins are)', allowedOrigins);
       return;
     }
     if (!message ||
          message.topic !== WindowMessenger.Topics.CONNECT_HANDSHAKE) {
-      console.log('Discarding connection message because it did not contain ' +
-        'our expected handshake:', message);
+      console/*OK*/.log('Discarding connection message because it did ' +
+        'not contain our expected handshake:', message);
       return;
     }
 
-    console.log('Received expected connection handshake message:', message);
+    console/*OK*/.log('Received expected connection handshake ' +
+      'message:', message);
     // This was our expected handshake message Remove our message handler so we
     // don't get spammed with cross-domain messages
     window.removeEventListener('message',
@@ -205,7 +211,7 @@ export class WindowMessenger {
       }, expectedRemoteOrigin === '*' ?
           '*' :
           new URL(expectedRemoteOrigin).origin, [this.channel.port2]);
-      console.log(`Opening message channel to ${expectedRemoteOrigin}...`);
+      console/*OK*/.log(`Opening channel to ${expectedRemoteOrigin}...`);
     });
   }
 
@@ -215,7 +221,10 @@ export class WindowMessenger {
     resolvePromise) {
     // This is the remote frame's reply to our initial handshake topic message
     this.connected = true;
-    console.log(`Messenger channel to ${expectedRemoteOrigin} established.`);
+    if (this.debug) {
+      console/*OK*/.log(`Messenger channel to ${expectedRemoteOrigin}` +
+        'established.');
+    }
     // Remove our message handler
     messagePort.removeEventListener('message',
         this.onConnectConnectionMessageReceivedProc);
@@ -249,7 +258,7 @@ export class WindowMessenger {
         // Set new incoming message data on existing message
       existingMessage.message = message.data;
       if (this.debug) {
-        console.log(`Received reply for topic '${message.topic}':`,
+        console/*OK*/.log(`Received reply for topic '${message.topic}':`,
             message.data);
       }
       promiseResolver([
@@ -262,7 +271,7 @@ export class WindowMessenger {
         return;
       }
       if (this.debug) {
-        console.log(`Received new message for topic '${message.topic}':`,
+        console/*OK*/.log(`Received new message for topic '${message.topic}':`,
             message.data);
       }
       for (let i = 0; i < listeners.length; i++) {
@@ -343,7 +352,9 @@ export class WindowMessenger {
       topic,
       data,
     };
-    console.log(`Sending ${topic}:`, data);
+    if (this.debug) {
+      console/*OK*/.log(`Sending ${topic}:`, data);
+    }
     this.messagePort./*OK*/postMessage(payload);
 
     return new Promise(resolve => {

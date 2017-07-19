@@ -26,6 +26,7 @@ import {installStylesForShadowRoot} from '../../../src/shadow-embed';
 import {openWindowDialog} from '../../../src/dom';
 import {TAG, NotificationPermission} from './vars';
 import {WebPushWidgetVisibilities} from './amp-web-push-widget';
+import {parseJson} from '../../../src/json';
 
 export class WebPushService {
 
@@ -218,40 +219,42 @@ export class WebPushService {
     }
     let config;
     try {
-      config = JSON.parse(/** @type {string} */(configJson));
+      config = parseJson(/** @type {string} */(configJson));
     } catch (e) {
       throw user().createError('Your AMP document\'s configuration ' +
         'JSON must be valid JSON. Failed to parse JSON: ' + e);
     }
 
-    if (!config.helperIframeUrl ||
-      !this.isValidHelperOrPermissionDialogUrl_(config.helperIframeUrl)) {
+    if (!config['helperIframeUrl'] ||
+      !this.isValidHelperOrPermissionDialogUrl_(
+          config['helperIframeUrl'])) {
       throw user().createError('Your AMP document\'s configuration JSON ' +
         'must have a valid helperIframeUrl property. It should begin with ' +
         'the https:// protocol and point to the provided lightweight ' +
         'template page provided for AMP messaging.');
     }
 
-    if (!config.permissionDialogUrl ||
-      !this.isValidHelperOrPermissionDialogUrl_(config.permissionDialogUrl)) {
+    if (!config['permissionDialogUrl'] ||
+      !this.isValidHelperOrPermissionDialogUrl_(
+          config['permissionDialogUrl'])) {
       throw user().createError('Your AMP document\'s configuration JSON must ' +
         'have a valid permissionDialogUrl property. It should begin with ' +
         'the https:// protocol and point to the provided template page ' +
         'for showing the permission prompt.');
     }
 
-    if (!config.serviceWorkerUrl ||
-      new URL(config.serviceWorkerUrl).protocol !== 'https:') {
+    if (!config['serviceWorkerUrl'] ||
+      new URL(config['serviceWorkerUrl']).protocol !== 'https:') {
       throw user().createError('Your AMP document\'s configuration JSON must ' +
         'have a valid serviceWorkerUrl property. It should begin with the ' +
         'https:// protocol and point to the service worker JavaScript file ' +
         'to be installed.');
     }
 
-    if (new URL(config.serviceWorkerUrl).origin !==
-          new URL(config.permissionDialogUrl).origin ||
-        new URL(config.permissionDialogUrl).origin !==
-        new URL(config.helperIframeUrl).origin) {
+    if (new URL(config['serviceWorkerUrl']).origin !==
+          new URL(config['permissionDialogUrl']).origin ||
+        new URL(config['permissionDialogUrl']).origin !==
+        new URL(config['helperIframeUrl']).origin) {
       throw user().createError('Your AMP document\'s configuration JSON ' +
         'properties serviceWorkerUrl, permissionDialogUrl, and ' +
         'helperIframeUrl must all share the same origin.');
