@@ -78,7 +78,7 @@ export class WebPushService {
     });
   }
 
-  /**
+  /*
   * Occurs when the DOM is ready to be parsed.
   */
   initialize_() {
@@ -170,7 +170,7 @@ export class WebPushService {
     }
   }
 
-  /**
+  /*
    * Checks that the user enabled this AMP experiment and allows integration
    * tests to access this class in testing mode.
    */
@@ -182,7 +182,7 @@ export class WebPushService {
       `Enable it on ${urls.cdn}/experiments.html.`);
   }
 
-  /**
+  /*
    * Searches for a <script type="application/json"> configuration and returns
    * it as text.
    */
@@ -196,7 +196,7 @@ export class WebPushService {
     return configJsonNode.textContent;
   }
 
-  /**
+  /*
   * Parses the JSON configuration and returns a JavaScript object. Also
   * validates the input.
   */
@@ -276,7 +276,7 @@ export class WebPushService {
     }
   }
 
-  /**
+  /*
    * Wait for bind scan to finish for testing.
    *
    * @return {?Promise}
@@ -477,7 +477,7 @@ export class WebPushService {
     this.setWidgetVisibilities(WebPushWidgetVisibilities.BLOCKED, false);
   }
 
-  /**
+  /*
    * @param {!ActionInvocation} invocation
    * @private
    */

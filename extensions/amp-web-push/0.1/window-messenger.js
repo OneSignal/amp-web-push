@@ -14,7 +14,7 @@
  * the License.
  */
 
- /**
+ /*
  * A Promise-based PostMessage helper to ease back-and-forth replies.
  *
  * This class is included separately a second time, by websites running
@@ -25,7 +25,7 @@
  */
 class WindowMessenger {
 
-  /**
+  /*
    * Set debug to true to get console logs anytime a message is received,
    * sent, or discarded.
    */
@@ -33,13 +33,13 @@ class WindowMessenger {
     if (!options) {
       options = {};
     }
-    /**
+    /*
      * A map of randomly generated transient unique message IDs to metadata
      * describing incoming replies and outgoing sends. Just used to internally
      * keep track of replies and sends.
      */
     this.messages = {};
-    /**
+    /*
      * A map of string topic names to callbacks listeners interested in replies
      * to the topic.
      */
@@ -56,7 +56,7 @@ class WindowMessenger {
     this.onChannelMessageReceivedProc = null;
   }
 
-  /**
+  /*
    * Starts Messenger in "listening" mode. In this mode, we listen as soon as
    * possible and expect a future postMessage() to establish a MessageChannel.
    * The remote frame initiates the connection.
@@ -102,7 +102,7 @@ class WindowMessenger {
     });
   }
 
-  /**
+  /*
    * Determine if a postMessage message came from a trusted origin.
    *
    * Messages can arrive from any origin asking for information, so we want to
@@ -160,7 +160,7 @@ class WindowMessenger {
     resolvePromise();
   }
 
-  /**
+  /*
    * Establishes a message channel with a listening Messenger on another frame.
    * Only call this if listen() has already been called on the remote frame.
    *
@@ -247,7 +247,7 @@ class WindowMessenger {
     }
   }
 
-  /**
+  /*
    * Occurs when a message is received via MessageChannel.
    * Messages received here are trusted (they aren't postMessaged() over).
    */
@@ -281,7 +281,7 @@ class WindowMessenger {
       }
   }
 
-  /**
+  /*
    * Subscribes a callback to be fired anytime a new message is received on the
    * topic. Replies to an existing message fire on the existing message promise
    * chain, not on this method, even if the topic matches.
@@ -294,7 +294,7 @@ class WindowMessenger {
     }
   }
 
-  /**
+  /*
    * Removes the mapping subscribing the callback to a new message topic.
    */
   off(topic, callback) {
@@ -336,7 +336,7 @@ class WindowMessenger {
     });
   }
 
-  /**
+  /*
    * Sends a message with the given topic, and data.
    *
    * Params:

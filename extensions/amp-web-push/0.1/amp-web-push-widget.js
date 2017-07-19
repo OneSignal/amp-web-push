@@ -20,15 +20,15 @@ import {Layout} from '../../../src/layout';
 
 /** @enum {string} */
 export const WebPushWidgetVisibilities = {
-  /**
+  /*
    * Describes the state when the user is subscribed.
    */
   SUBSCRIBED: 'subscribed',
-  /**
+  /*
    * Describes the state when the user is not subscribed.
    */
   UNSUBSCRIBED: 'unsubscribed',
-  /**
+  /*
    * Widgets shown when the user has blocked permissions, or has tried
    * subscribing in Incognito mode.
    */
