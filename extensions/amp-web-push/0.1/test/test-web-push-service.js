@@ -36,9 +36,9 @@ describes.realWin('web-push-service', {
     webPush = new WebPushService(env.ampdoc);
 
     validConfigJson = {
-      'helperIframeUrl': '/webpush/amp/helper?https=1',
-      'permissionDialogUrl': '/webpush/amp/subscribe?https=1',
-      'serviceWorkerUrl': '/service-worker.js?param=value',
+      'helperIframeUrl': 'https://a.com/webpush/amp/helper?https=1',
+      'permissionDialogUrl': 'https://a.com/webpush/amp/subscribe?https=1',
+      'serviceWorkerUrl': 'https://a.com/service-worker.js?param=value',
     };
   });
 
@@ -52,7 +52,7 @@ describes.realWin('web-push-service', {
     window.AMP_MODE = {test: false};
     expect(() => {
       new WebPushService(env.ampdoc).ensureAmpExperimentEnabled_();
-    }).to.throw(`Experiment "${TAG}" is disabled. Enable it on` +
+    }).to.throw(`Experiment "${TAG}" is disabled. Enable it on ` +
       'https://cdn.ampproject.org/experiments.html.');
   });
 
@@ -169,6 +169,16 @@ describes.realWin('web-push-service', {
       'have a valid serviceWorkerUrl property. It should begin with the ' +
       'https:// protocol and point to the service worker JavaScript file ' +
       'to be installed.');
+  });
+
+  it('should fail if config JSON URL origins don\'t match', () => {
+    expect(() => {
+      const configJson = Object.assign({}, validConfigJson);
+      configJson.serviceWorkerUrl = 'https://b.com/service-worker.js';
+      webPush.parseConfigJson(JSON.stringify(configJson));
+    }).to.throw('Your AMP document\'s configuration JSON ' +
+        'properties serviceWorkerUrl, permissionDialogUrl, and ' +
+        'helperIframeUrl must all share the same origin.');
   });
 
   it('should parse valid config JSON', () => {

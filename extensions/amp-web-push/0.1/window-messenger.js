@@ -216,17 +216,13 @@ export class WindowMessenger {
       this.messagePort.addEventListener('message',
           this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      // remoteWindowContext./*OK*/postMessage(
-      //     dict({a: '1'}), '*', [this.channel.port2]);
+      remoteWindowContext./*OK*/postMessage(/** @type {JsonObject} */ ({
+        topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
+      }), expectedRemoteOrigin === '*' ?
+                '*' :
+                new URL(expectedRemoteOrigin).origin, [this.channel.port2]);
       console/*OK*/.log(`Opening channel to ${expectedRemoteOrigin}...`);
     });
-  }
-
-  /** @param {!Window} window */
-  test(window) {
-    const channel = new MessageChannel();
-    window./*OK*/postMessage('', '*');
-    window./*OK*/postMessage('', '*', [channel.port2]);
   }
 
   onConnectConnectionMessageReceived(
