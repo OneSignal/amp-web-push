@@ -14,6 +14,16 @@
  * the License.
  */
 
+import {WindowMessenger} from '../../../../extensions/amp-web-push/0.1/window-messenger';
+
+ /**
+  * @fileoverview
+  * Loaded as an invisible iframe on the AMP page, and serving a page on the
+  * canonical origin, this iframe enables same-origin access to push
+  * subscription, notification permission, and IndexedDb data stored on the
+  * canonical origin to query the user's permission state, register service
+  * workers, and enable communication with the registered service worker.
+  */
 class AmpWebPushHelperFrame {
   constructor(options) {
     if (options && options.debug) {
@@ -111,10 +121,12 @@ class AmpWebPushHelperFrame {
   }
 
   onAmpPageMessageReceived_ServiceWorkerQuery(message, replyToFrame) {
+    debugger;
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
     }
     new Promise((resolve) => {
+      console.warn("A:");
       // Allow this message through, just for the next time it's received
       this.allowedWorkerMessageTopics[message.topic] = resolve;
 
@@ -126,6 +138,7 @@ class AmpWebPushHelperFrame {
         });
       });
     }).then((workerReplyPayload) => {
+      console.warn("B workerReplyPayload:", workerReplyPayload);
       delete this.allowedWorkerMessageTopics[message.topic];
 
       // The service worker's reply is forwarded back to the AMP page

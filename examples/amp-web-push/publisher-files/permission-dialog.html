@@ -25,38 +25,7 @@
   <!--
     Minified script bundle of permission-dialog.js and window-messenger.js.
   -->
-  <script>
-var WindowMessenger=function(){function e(e){e||(e={}),this.messages={},this.listeners={},this.debug=e.debug,this.listening=!1,this.connecting=!1,this.connected=!1,this.channel=null,this.messagePort=null,this.onListenConnectionMessageReceivedProc=null,this.onConnectConnectionMessageReceivedProc=null,this.onChannelMessageReceivedProc=null}return e.prototype.listen=function(n){var i=this
-return new Promise(function(e,o){return i.connected?void o(Error("Already connected.")):i.listening?void o(Error("Already listening for connections.")):Array.isArray(n)?(i.onListenConnectionMessageReceivedProc=i.onListenConnectionMessageReceived.bind(i,n,e,o),window.addEventListener("message",i.onListenConnectionMessageReceivedProc),void i.log("Listening for a connection message...")):void o(Error("allowedOrigins should be a string array of allowed origins to accept messages from. Got:",n))}).then(function(){i.send(e.Topics.CONNECT_HANDSHAKE,null),i.connected=!0,i.log("Messenger channel to "+origin+" established.")})},e.prototype.isAllowedOrigin=function(e,n){for(var i=new URL(e).origin,o=0,t=n;o<t.length;o++){var s=t[o]
-if(new URL(s).origin===i)return!0}return!1},e.prototype.onListenConnectionMessageReceived=function(n,i,o,t){var s=t.data,r=t.origin,c=t.ports
-return this.log("Window message for listen() connection received:",s),this.isAllowedOrigin(r,n)?s&&s.topic===e.Topics.CONNECT_HANDSHAKE?(this.log("Received expected connection handshake message:",s),window.removeEventListener("message",this.onListenConnectionMessageReceivedProc),this.messagePort=c[0],this.onChannelMessageReceivedProc=this.onChannelMessageReceived.bind(this),this.messagePort.addEventListener("message",this.onChannelMessageReceivedProc,!1),this.messagePort.start(),void i()):void this.log("Discarding connection message because it did not contain our expected handshake:",s):void this.log("Discarding connection message from "+r+" because it isn't an allowed origin:",s," (allowed origins are)",n)},e.prototype.connect=function(n,i){var o=this
-return new Promise(function(t,s){return n||s(Error("Provide a valid Window context to connect to.")),i||s(Error("Provide an expected origin for the remote Window or provide the wildcard *.")),o.connected?void s(Error("Already connected.")):o.connecting?void s(Error("Already connecting.")):(o.channel=new MessageChannel,o.messagePort=o.channel.port1,o.onConnectConnectionMessageReceivedProc=o.onConnectConnectionMessageReceived.bind(o,o.messagePort,i,t,s),o.messagePort.addEventListener("message",o.onConnectConnectionMessageReceivedProc),o.messagePort.start(),n.postMessage({topic:e.Topics.CONNECT_HANDSHAKE},"*"===i?"*":new URL(i).origin,[o.channel.port2]),void o.log("Opening message channel to "+i+"..."))})},e.prototype.onConnectConnectionMessageReceived=function(e,n,i,o){this.connected=!0,this.log("Messenger channel to "+n+" established."),e.removeEventListener("message",this.onConnectConnectionMessageReceivedProc),this.onChannelMessageReceivedProc=this.onChannelMessageReceived.bind(this),e.addEventListener("message",this.onChannelMessageReceivedProc,!1),i()},Object.defineProperty(e,"Topics",{get:function(){return{CONNECT_HANDSHAKE:"topic-connect-handshake",AMP_EXTENSION_CONFIG:"topic-amp-extension-config",NOTIFICATION_PERMISSION_STATE:"topic-notification-permission-state",SERVICE_WORKER_STATE:"topic-service-worker-state",SUBSCRIPTION_STATE:"topic-subscription-state",SERVICE_WORKER_REGISTRATION:"topic-service-worker-registration",SUBSCRIBING:"topic-subscribing",PERMISSION_DIALOG_SHOWN:"topic-permission-dialog-shown",NOTIFICATION_PERMISSION_RESULT:"topic-notification-permission-result",UNSUBSCRIBING:"topic-unsubscribing",SERVICE_WORKER_QUERY:"topic-service-worker-query"}},enumerable:!0,configurable:!0}),e.prototype.log=function(){if(this.debug){var e=location.origin+":",n=Array.prototype.concat.apply([e],arguments)
-console.log.apply(null,n)}},e.prototype.onChannelMessageReceived=function(e){var n=e.data
-e.origin,e.source
-if(this.messages[n.id]&&n.isReply){var i=this.messages[n.id]
-delete this.messages[n.id]
-var o=i.promiseResolver
-i.message=n.data,this.debug&&this.log("Received reply for topic '"+n.topic+"':",n.data),o([n.data,this.sendReply.bind(this,n.id,i.topic)])}else{var t=this.listeners[n.topic]
-if(!t)return
-this.debug&&this.log("Received new message for topic '"+n.topic+"':",n.data)
-for(var s=0,r=t;s<r.length;s++){var c=r[s]
-c(n.data,this.sendReply.bind(this,n.id,n.topic))}}},e.prototype.on=function(e,n){this.listeners[e]?this.listeners[e].push(n):this.listeners[e]=[n]},e.prototype.off=function(e,n){if(n){var i=this.listeners.topic.indexOf(n);-1!==i&&this.listeners.splice(i,1)}else this.listeners[e]&&delete this.listeners[e]},e.prototype.sendReply=function(e,n,i){var o=this,t={id:e,topic:n,data:i,isReply:!0}
-return this.messagePort.postMessage(t),new Promise(function(e){o.messages[t.id]={message:i,topic:n,promiseResolver:e}})},e.prototype.send=function(e,n){var i=this,o={id:crypto.getRandomValues(new Uint8Array(10)).join(""),topic:e,data:n}
-return this.log("Sending "+e+":",n),this.messagePort.postMessage(o),new Promise(function(t){i.messages[o.id]={message:n,topic:e,promiseResolver:t}})},e}()
-"undefined"!=typeof module&&(module.exports=WindowMessenger)
-var AmpWebPushPermissionDialog=function(){function e(e){e&&e.debug&&(this.debug=!0),this.ampMessenger=new WindowMessenger({debug:this.debug})}return e.prototype.isCurrentDialogPopup=function(){return!!window.opener&&window.opener!==window},e.prototype.requestNotificationPermission=function(){return new Promise(function(e,n){try{Notification.requestPermission(function(n){return e(n)})}catch(i){n(i)}})},e.prototype.tryDecodeUriComponent=function(e,n){void 0===n&&(n="")
-try{return decodeURIComponent(e)}catch(i){return n}},e.prototype.parseQueryString=function(e){var n=Object.create(null)
-if(!e)return n
-for(var i,o=/(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;i=o.exec(e);){var t=this.tryDecodeUriComponent(i[1]).trim(),s=i[2]?this.tryDecodeUriComponent(i[2]).trim():""
-n[t]=s}return n},e.prototype.run=function(){var e=this
-if(this.isCurrentDialogPopup())this.ampMessenger.connect(opener,"*"),this.requestNotificationPermission().then(function(n){return e.ampMessenger.send(WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,n)}).then(function(e){var n=e[0]
-e[1]
-n&&n.closeFrame&&window.close()})
-else{var n=this.parseQueryString(window.location.search)
-if(!n["return"])throw Error("Expecting return URL query parameter to redirect back.")
-this.requestNotificationPermission().then(function(i){window.location.href=e.tryDecodeUriComponent(n["return"])})}},e}()
-new AmpWebPushPermissionDialog({debug:!0}).run()
-  </script>
+  <!-- [GULP-MAGIC-REPLACE permission-dialog.js] -->
 </head>
 <body>
   <p class="centered" id="subscribe-message">Click Allow to subscribe.</p>

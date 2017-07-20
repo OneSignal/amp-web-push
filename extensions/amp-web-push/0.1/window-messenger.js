@@ -23,7 +23,6 @@
  * since this class must be transpiled to ES5 and "duplicated" outside of the
  * AMP SDK bundle.
  */
-import {getData} from '../../../src/event-helper';
 
 export class WindowMessenger {
 
@@ -140,7 +139,8 @@ export class WindowMessenger {
     rejectPromise,
     messageChannelEvent
   ) {
-    const message = getData(messageChannelEvent);
+    const message = /** @type {?JsonObject|string|undefined} */
+      (messageChannelEvent.data);
     const {origin, ports: messagePorts} = messageChannelEvent;
     if (this.debug) {
       console/*OK*/.log('Window message for listen() connection ' +
@@ -216,9 +216,9 @@ export class WindowMessenger {
       this.messagePort.addEventListener('message',
           this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      remoteWindowContext./*OK*/postMessage(/** @type {JsonObject} */ ({
+      remoteWindowContext./*OK*/postMessage({
         topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
-      }), expectedRemoteOrigin === '*' ?
+      }, expectedRemoteOrigin === '*' ?
                 '*' :
                 new URL(expectedRemoteOrigin).origin, [this.channel.port2]);
       console/*OK*/.log(`Opening channel to ${expectedRemoteOrigin}...`);
@@ -261,7 +261,7 @@ export class WindowMessenger {
    * Messages received here are trusted (they aren't postMessaged() over).
    */
   onChannelMessageReceived(event) {
-    const message = getData(event);
+    const message = /** @type {?JsonObject|string|undefined} */ (event.data);
     if (this.messages[message['id']] && message['isReply']) {
       const existingMessage = this.messages[message['id']];
       delete this.messages[message['id']];

@@ -14,7 +14,7 @@
  * the License.
  */
 
- /*
+ /** @fileoverview
   This file is an example implementation for a service worker compatible with
   amp-web-push. This means the service worker accepts window messages (listened
   to via the service worker's 'message' handler), performs some action, and
@@ -31,16 +31,16 @@ const WorkerMessengerCommand = {
   /*
     Used to request the current subscription state.
    */
-  AMP_SUBSCRIPION_STATE: "amp-web-push-subscription-state",
+  AMP_SUBSCRIPION_STATE: 'amp-web-push-subscription-state',
   /*
     Used to request the service worker to subscribe the user to push.
     Notification permissions are already granted at this point.
    */
-  AMP_SUBSCRIBE: "amp-web-push-subscribe",
+  AMP_SUBSCRIBE: 'amp-web-push-subscribe',
   /*
     Used to unsusbcribe the user from push.
    */
-  AMP_UNSUBSCRIBE: "amp-web-push-unsubscribe"
+  AMP_UNSUBSCRIBE: 'amp-web-push-unsubscribe',
 };
 
 /*
@@ -66,70 +66,88 @@ self.addEventListener('message', event => {
     - payload: An optional JavaScript object containing extra data relevant to
       the command.
    */
-  const { command, payload } = event.data;
+  const {command, payload} = event.data;
 
   switch (command) {
     case WorkerMessengerCommand.AMP_SUBSCRIPION_STATE:
-      onMessageReceived_SubscriptionState(payload);
+      onMessageReceivedSubscriptionState(payload);
       break;
     case WorkerMessengerCommand.AMP_SUBSCRIBE:
-      onMessageReceived_Subscribe(payload);
+      onMessageReceivedSubscribe(payload);
       break;
     case WorkerMessengerCommand.AMP_UNSUBSCRIBE:
-      onMessageReceived_Unsubscribe(payload);
+      onMessageReceivedUnsubscribe(payload);
       break;
   }
 });
 
-/*
+/**
   Broadcasts a single boolean describing whether the user is subscribed.
  */
-async function onMessageReceived_SubscriptionState(payload) {
-  const pushSubscription = await self.registration.pushManager.getSubscription();
-  if (!pushSubscription) {
-    broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, false);
-  } else {
-    const permission = await self.registration.pushManager.permissionState(pushSubscription.options);
-    const isSubscribed = !!pushSubscription && permission === "granted";
-    broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, isSubscribed);
-  }
+function onMessageReceivedSubscriptionState() {
+  self.registration.pushManager.getSubscription()
+    .then(pushSubscription => {
+      if (!pushSubscription) {
+        return null;
+      } else {
+        return self.registration.pushManager.permissionState(
+            pushSubscription.options
+        );
+      }
+    }).then(permissionStateOrNull => {
+        if (permissionStateOrNull == null) {
+          broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, false);
+        } else {
+          const isSubscribed = !!pushSubscription &&
+            permission === 'granted';
+        broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE,
+          isSubscribed);
+        }
+    });
 }
-/*
+
+/**
   Subscribes the visitor to push.
 
   The broadcast value is null (not used in the AMP page).
  */
-async function onMessageReceived_Subscribe(payload) {
-  const subscription = await self.registration.pushManager.subscribe({
+function onMessageReceivedSubscribe() {
+  self.registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: 'fake-demo-key',
-  });
+  }).then(() => {
   // IMPLEMENT: Forward the push subscription to your server here
   broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
+  })
 }
 
 
-/*
+/**
   Unsubscribes the subscriber from push.
 
   The broadcast value is null (not used in the AMP page).
  */
-async function onMessageReceived_Unsubscribe(payload) {
-  const subscription = await self.registration.pushManager.getSubscription();
-  await subscription.unsubscribe();
-  // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
-  broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
+function onMessageReceivedUnsubscribe() {
+  self.registration.pushManager.getSubscription()
+  .then(subscription => subscription.unsubscribe())
+  .then(() => {
+    // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
+    broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
+  };
 }
 
-/*
+/**
   Sends a postMessage() to all window frames the service worker controls.
  */
-async function broadcastReply(command, payload) {
-  const clients = await self.clients.matchAll({});
-  for (let client of clients) {
-    client./*OK*/postMessage({
-      command: command,
-      payload: payload
-    });
-  }
+function broadcastReply(command, payload) {
+  self.clients.matchAll()
+  .then(clients => {
+    for (let i = 0; i < clients.length; i++) {
+      const client = clients[i];
+      client./*OK*/postMessage({
+        command,
+        payload,
+      });
+    }
+  });
 }

@@ -910,6 +910,67 @@ function buildExperiments(options) {
 
 
 /**
+ * Build amp-web-push publisher files HTML page.
+ *
+ * @param {!Object} options
+ */
+function buildWebPushPublisherFiles(options) {
+  options = options || {};
+  var watch = options.watch;
+  if (watch === undefined) {
+    watch = argv.watch || argv.w;
+  }
+
+  var fileNames = ['helper-frame', 'permission-dialog'];
+  for (var i = 0; i < fileNames.length; i++) {
+    var fileName = fileNames[i];
+    buildWebPushPublisherFile(fileName, watch, options);
+  }
+}
+
+function buildWebPushPublisherFile(fileName, watch, options) {
+  var basePath = 'examples/amp-web-push/publisher-files/';
+  var tempBuildDir = 'build/all/v0/amp-web-push-publisher-files/';
+  var distDir = 'dist/v0/amp-web-push-publisher-files/';
+
+  // Build Helper Frame JS
+  var js = fs.readFileSync(basePath + fileName + '.js', 'utf8');
+  var builtName = fileName + '.js';
+  var minifiedName = fileName + '.js';
+  var latestName = fileName + '-latest.js';
+  toPromise(gulp.src(basePath + builtName + '.js')
+    .pipe($$.file(builtName, js))
+    .pipe(gulp.dest(tempBuildDir)))
+    .then(function () {
+      return compileJs(tempBuildDir, builtName, distDir, {
+        watch: watch,
+        includePolyfills: false,
+        minify: false,
+        minifiedName: minifiedName,
+        preventRemoveAndMakeDir: options.preventRemoveAndMakeDir,
+        latestName: latestName,
+      });
+    })
+    .then(function () {
+      // Build Helper Frame HTML
+      var fileContents = fs.readFileSync(basePath + fileName + '.html', 'utf8');
+      fileContents = fileContents.replace(
+          '<!-- [GULP-MAGIC-REPLACE ' + fileName + '.js] -->',
+          '<script>' + fs.readFileSync(distDir + fileName + '.js', 'utf8') +
+            '</script>'
+      );
+
+      mkdirSync('dist');
+      mkdirSync('dist/v0');
+      mkdirSync('dist/v0/amp-web-push-publisher-files');
+
+      fs.writeFileSync('dist/v0/amp-web-push-publisher-files/' + fileName + '.html',
+        fileContents);
+    });
+}
+
+
+/**
  * Build "Login Done" page.
  *
  * @param {!Object} options
@@ -1133,3 +1194,5 @@ gulp.task('watch', 'Watches for changes in files, re-build', watch, {
 });
 gulp.task('build-experiments', 'Builds experiments.html/js', buildExperiments);
 gulp.task('build-login-done', 'Builds login-done.html/js', buildLoginDone);
+gulp.task('build-web-push-publisher-files', 'Builds examples/amp-web-push/publisher-files HTML files', buildWebPushPublisherFiles);
+
