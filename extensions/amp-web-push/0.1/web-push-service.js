@@ -102,6 +102,7 @@ export class WebPushService {
 
   /**
   * Occurs when the <amp-web-push-config> element loads.
+  * @returns {(Promise|null|undefined)}
   */
   start(configJson) {
     dev().fine(TAG, 'amp-web-push extension starting up.');
@@ -137,7 +138,7 @@ export class WebPushService {
     });
 
     // Load the iFrame asychronously in the background
-    this.iframe_.load().then(() => {
+    return this.iframe_.load().then(() => {
       dev().fine(TAG, `Helper frame ${this.config_.helperIframeUrl} DOM ` +
         'loaded. Connecting to the frame via postMessage()...');
       this.frameMessenger_.connect(
@@ -191,16 +192,6 @@ export class WebPushService {
     const isExperimentEnabled = isExperimentOn(this.ampdoc.win, TAG);
     user().assert(isExperimentEnabled, `Experiment "${TAG}" is disabled. ` +
       `Enable it on ${urls.cdn}/experiments.html.`);
-  }
-
-  /**
-   * Wait for bind scan to finish for testing.
-   *
-   * @return {?Promise}
-   * @visibleForTesting
-   */
-  get initializePromiseForTesting() {
-    return this.initializePromise_;
   }
 
   /**

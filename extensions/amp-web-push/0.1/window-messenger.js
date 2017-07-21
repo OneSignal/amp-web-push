@@ -193,7 +193,7 @@ export class WindowMessenger {
    *   - expectedRemoteOrigin: The origin the remote frame is required to be
    *     when receiving the message; the remote message is otherwise discarded.
    *
-   * @param {!Window} remoteWindowContext
+   * @param {(Window|null)} remoteWindowContext
    */
   connect(remoteWindowContext, expectedRemoteOrigin) {
     return new Promise((resolve, reject) => {
@@ -224,9 +224,10 @@ export class WindowMessenger {
       this.messagePort.addEventListener('message',
           this.onConnectConnectionMessageReceivedProc);
       this.messagePort.start();
-      remoteWindowContext./*OK*/postMessage({
-        topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
-      }, expectedRemoteOrigin === '*' ?
+      remoteWindowContext./*OK*/postMessage(
+        /** @type {JsonObject} */ ({
+          topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
+        }), expectedRemoteOrigin === '*' ?
                 '*' :
                 parseUrl(expectedRemoteOrigin).origin, [this.channel.port2]);
       dev().fine(TAG, `Opening channel to ${expectedRemoteOrigin}...`);

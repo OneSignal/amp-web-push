@@ -40,7 +40,7 @@ export class IFrameHost {
     this.url_ = url;
 
     /**
-     * @type {HTMLElement|null}
+     * @type {Element|null}
      * @private
      */
     this.domElement_ = null;
@@ -74,7 +74,7 @@ export class IFrameHost {
   /**
    * Returns the IFrame DOM element.
    *
-   * @return {HTMLIFrameElement}
+   * @return {(Element|null)}
    */
   getDomElement() {
     return this.domElement_;
