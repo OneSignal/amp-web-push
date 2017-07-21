@@ -23,6 +23,7 @@
  * since this class must be transpiled to ES5 and "duplicated" outside of the
  * AMP SDK bundle.
  */
+import {getData} from '../../../src/event-helper';
 
 export class WindowMessenger {
 
@@ -139,8 +140,7 @@ export class WindowMessenger {
     rejectPromise,
     messageChannelEvent
   ) {
-    const message = /** @type {?JsonObject|string|undefined} */
-      (messageChannelEvent.data);
+    const message = getData(messageChannelEvent);
     const {origin, ports: messagePorts} = messageChannelEvent;
     if (this.debug) {
       console/*OK*/.log('Window message for listen() connection ' +
@@ -261,7 +261,7 @@ export class WindowMessenger {
    * Messages received here are trusted (they aren't postMessaged() over).
    */
   onChannelMessageReceived(event) {
-    const message = /** @type {?JsonObject|string|undefined} */ (event.data);
+    const message = getData(event);
     if (this.messages[message['id']] && message['isReply']) {
       const existingMessage = this.messages[message['id']];
       delete this.messages[message['id']];
