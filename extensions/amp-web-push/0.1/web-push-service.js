@@ -415,7 +415,7 @@ export class WebPushService {
   setWidgetVisibilities(widgetCategoryName, isVisible) {
     const widgetDomElements = this.ampdoc.getRootNode()
       .querySelectorAll(`${TAG}[visibility=${widgetCategoryName}]`);
-    const visibilityCssClassName = 'invisible';
+    const visibilityCssClassName = 'amp-invisible';
 
     for (let i = 0; i < widgetDomElements.length; i++) {
       const widgetDomElement = widgetDomElements[i];

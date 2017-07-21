@@ -57,7 +57,7 @@ export class WebPushWidget extends AMP.BaseElement {
   /** @override */
   buildCallback() {
     // Hide the element
-    this.element.classList.add('invisible');
+    this.element.classList.add('amp-invisible');
 
     this.registerAction(WebPushWidgetActions.SUBSCRIBE,
         this.onSubscribe.bind(this));
