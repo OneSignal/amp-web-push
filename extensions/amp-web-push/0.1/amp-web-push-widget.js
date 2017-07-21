@@ -14,10 +14,52 @@
  * the License.
  */
 
-import {TAG} from './vars';
+import {SERVICE_TAG} from './vars';
 import {Layout} from '../../../src/layout';
 import {getServiceForDoc} from '../../../src/service';
 
+/**
+ * @fileoverview
+ * A <web-push-widget> that shows or hides based on the page user's subscription
+ * state, and can be set to subscribe or unsubscribe the user.
+ *
+ * All widgets are initially invisible while their visibility is computed.
+ */
+export class WebPushWidget extends AMP.BaseElement {
+
+  /** @param {!AmpElement} element */
+  constructor(element) {
+    super(element);
+  }
+
+  /** @override */
+  isLayoutSupported(layout) {
+    return layout == Layout.FIXED;
+  }
+
+  /** @override */
+  buildCallback() {
+    // Hide the element
+    this.element.classList.add('amp-invisible');
+
+    this.registerAction(WebPushWidgetActions.SUBSCRIBE,
+        this.onSubscribe_.bind(this));
+    this.registerAction(WebPushWidgetActions.UNSUBSCRIBE,
+        this.onUnsubscribe_.bind(this));
+  }
+
+  /** @private */
+  onSubscribe_() {
+    const webPushService = getServiceForDoc(this.getAmpDoc(), SERVICE_TAG);
+    webPushService.subscribe();
+  }
+
+  /** @private */
+  onUnsubscribe_() {
+    const webPushService = getServiceForDoc(this.getAmpDoc(), SERVICE_TAG);
+    webPushService.unsubscribe();
+  }
+}
 
 /** @enum {string} */
 export const WebPushWidgetVisibilities = {
@@ -41,37 +83,3 @@ export const WebPushWidgetActions = {
   SUBSCRIBE: 'subscribe',
   UNSUBSCRIBE: 'unsubscribe',
 };
-
-export class WebPushWidget extends AMP.BaseElement {
-
-  /** @param {!AmpElement} element */
-  constructor(element) {
-    super(element);
-  }
-
-  /** @override */
-  isLayoutSupported(layout) {
-    return layout == Layout.FIXED;
-  }
-
-  /** @override */
-  buildCallback() {
-    // Hide the element
-    this.element.classList.add('amp-invisible');
-
-    this.registerAction(WebPushWidgetActions.SUBSCRIBE,
-        this.onSubscribe.bind(this));
-    this.registerAction(WebPushWidgetActions.UNSUBSCRIBE,
-        this.onUnsubscribe.bind(this));
-  }
-
-  onSubscribe() {
-    const webPushService = getServiceForDoc(this.getAmpDoc(), TAG);
-    webPushService.subscribe();
-  }
-
-  onUnsubscribe() {
-    const webPushService = getServiceForDoc(this.getAmpDoc(), TAG);
-    webPushService.unsubscribe();
-  }
-}

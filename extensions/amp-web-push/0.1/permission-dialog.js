@@ -17,6 +17,12 @@
 import {tryDecodeUriComponent} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 
+/**
+ * @fileoverview
+ * The script for the web push notification permission dialog. This script will
+ * eventually live on the publisher's origin. It shows the notification prompt
+ * and forwards results to the AMP page.
+ */
 class AmpWebPushPermissionDialog {
   constructor(options) {
     if (options && options.debug) {
@@ -31,12 +37,14 @@ class AmpWebPushPermissionDialog {
     });
   }
 
-  isCurrentDialogPopup() {
+  /** @private */
+  isCurrentDialogPopup_() {
     return !!window.opener &&
       window.opener !== window;
   }
 
-  requestNotificationPermission() {
+  /** @private */
+  requestNotificationPermission_() {
     return new Promise((resolve, reject) => {
       try {
         Notification.requestPermission(permission => resolve(permission));
@@ -72,11 +80,18 @@ class AmpWebPushPermissionDialog {
     return params;
   }
 
+  /**
+   * Requests notoification permissions and reports the result back to the AMP
+   * page.
+   *
+   * If this dialog was redirected instead of opened as a pop up, the page is
+   * redirected back.
+   */
   run() {
-    if (this.isCurrentDialogPopup()) {
+    if (this.isCurrentDialogPopup_()) {
       this.ampMessenger.connect(opener, '*');
 
-      this.requestNotificationPermission().then(permission => {
+      this.requestNotificationPermission_().then(permission => {
         return this.ampMessenger.send(
             WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
             permission
@@ -93,7 +108,7 @@ class AmpWebPushPermissionDialog {
         throw new Error(
           'Expecting return URL query parameter to redirect back.');
       }
-      this.requestNotificationPermission().then(() => {
+      this.requestNotificationPermission_().then(() => {
         window.location.href =
           this.tryDecodeUriComponent(queryParams['return']);
       });

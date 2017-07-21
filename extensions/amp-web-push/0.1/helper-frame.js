@@ -62,7 +62,7 @@ class AmpWebPushHelperFrame {
     });
   }
 
-  onAmpPageMessageReceivedNotificationPermissionState(_, replyToFrame) {
+  onAmpPageMessageReceivedNotificationPermissionState_(_, replyToFrame) {
     this.replyToFrameWithPayload(
         replyToFrame,
         true,
@@ -71,7 +71,7 @@ class AmpWebPushHelperFrame {
     );
   }
 
-  onAmpPageMessageReceivedServiceWorkerState(_, replyToFrame) {
+  onAmpPageMessageReceivedServiceWorkerState_(_, replyToFrame) {
     const serviceWorkerState = {
       /*
         Describes whether navigator.serviceWorker.controller is non-null.
@@ -101,7 +101,7 @@ class AmpWebPushHelperFrame {
     this.replyToFrameWithPayload(replyToFrame, true, null, serviceWorkerState);
   }
 
-  onAmpPageMessageReceivedServiceWorkerRegistration(message, replyToFrame) {
+  onAmpPageMessageReceivedServiceWorkerRegistration_(message, replyToFrame) {
     if (!message || !message.workerUrl || !message.registrationOptions) {
       throw new Error('Expected arguments workerUrl and registrationOptions ' +
       'in message, got:', message);
@@ -121,7 +121,7 @@ class AmpWebPushHelperFrame {
         });
   }
 
-  onAmpPageMessageReceivedServiceWorkerQuery(message, replyToFrame) {
+  onAmpPageMessageReceivedServiceWorkerQuery_(message, replyToFrame) {
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
     }
@@ -244,19 +244,19 @@ class AmpWebPushHelperFrame {
   run() {
     this.ampMessenger.on(
         WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
-        this.onAmpPageMessageReceivedNotificationPermissionState.bind(this)
+        this.onAmpPageMessageReceivedNotificationPermissionState_.bind(this)
     );
     this.ampMessenger.on(
         WindowMessenger.Topics.SERVICE_WORKER_STATE,
-        this.onAmpPageMessageReceivedServiceWorkerState.bind(this)
+        this.onAmpPageMessageReceivedServiceWorkerState_.bind(this)
     );
     this.ampMessenger.on(
         WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
-        this.onAmpPageMessageReceivedServiceWorkerRegistration.bind(this)
+        this.onAmpPageMessageReceivedServiceWorkerRegistration_.bind(this)
     );
     this.ampMessenger.on(
         WindowMessenger.Topics.SERVICE_WORKER_QUERY,
-        this.onAmpPageMessageReceivedServiceWorkerQuery.bind(this)
+        this.onAmpPageMessageReceivedServiceWorkerQuery_.bind(this)
     );
 
     this.waitUntilWorkerControlsPage().then(() => {

@@ -73,13 +73,11 @@ See [amp-web-push rules](https://github.com/ampproject/amphtml/blob/master/exten
 amp-web-push requires extra integration on your site. You will need to upload two HTML files (provided) on your site as well as an amp-web-push compatible service worker JavaScript file. These three files form the configuration described below.
 
 ```html
-<script id="amp-web-push" type="application/json">
-  {
-      "helperIframeUrl": "https://example.com/helper-iframe.html",
-      "permissionDialogUrl": "https://example.com/permission-dialog.html",
-      "serviceWorkerUrl": "https://example.com/service-worker.js"
-  }
-</script>
+<amp-web-push-config
+  helperIframeUrl="https://example.com/helper-iframe.html"
+  permissionDialogUrl="https://example.com/permission-dialog.html"
+  serviceWorkerUrl="https://example.com/service-worker.js"
+></amp-web-push-config>
 ```
 
 All properties are <strong>required</strong>, and all URLs must begin with the same origin (e.g. https://example.com).

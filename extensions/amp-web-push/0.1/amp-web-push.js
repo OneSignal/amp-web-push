@@ -14,7 +14,8 @@
  * the License.
  */
 
-/*
+/**
+ * @fileoverview
  * Allows web push notification subscription widgets on AMP pages of
  * push vendor-enabled sites that open to a special subscription page on the
  * canonical origin when clicked.
@@ -24,10 +25,12 @@
  */
 
 import {WebPushService} from './web-push-service';
-import {TAG} from './vars';
+import {WebPushConfig} from './amp-web-push-config';
+import {CONFIG_TAG, WIDGET_TAG, SERVICE_TAG} from './vars';
 import {WebPushWidget} from './amp-web-push-widget';
 import {CSS} from '../../../build/amp-web-push-0.1.css';
 
 
-AMP.registerServiceForDoc(TAG, WebPushService);
-AMP.registerElement(TAG, WebPushWidget, CSS);
+AMP.registerServiceForDoc(SERVICE_TAG, WebPushService);
+AMP.registerElement(CONFIG_TAG, WebPushConfig);
+AMP.registerElement(WIDGET_TAG, WebPushWidget, CSS);

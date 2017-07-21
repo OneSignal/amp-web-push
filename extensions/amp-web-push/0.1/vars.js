@@ -16,6 +16,9 @@
 
 export const EXPERIMENT = 'amp-web-push';
 export const TAG = 'amp-web-push';
+export const CONFIG_TAG = TAG + '-config';
+export const SERVICE_TAG = TAG + '-service';
+export const WIDGET_TAG = TAG;
 
 /** @enum {string} */
 export const NotificationPermission = {
