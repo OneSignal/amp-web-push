@@ -14,6 +14,9 @@
  * the License.
  */
 
+import {tryDecodeUriComponent} from '../../../src/url.js';
+import {WindowMessenger} from './window-messenger';
+
 class AmpWebPushPermissionDialog {
   constructor(options) {
     if (options && options.debug) {
@@ -24,7 +27,7 @@ class AmpWebPushPermissionDialog {
 
     // For communication between the AMP page and this permission dialog
     this.ampMessenger = new WindowMessenger({
-      debug: this.debug
+      debug: this.debug,
     });
   }
 
@@ -41,22 +44,6 @@ class AmpWebPushPermissionDialog {
         reject(e);
       }
     });
-  }
-
-  /**
-   * Tries to decode a URI component, falling back to opt_fallback (or an empty
-   * string)
-   *
-   * @param {string} component
-   * @param {string=} opt_fallback
-   * @return {string}
-   */
-  tryDecodeUriComponent(component, fallback = '') {
-    try {
-      return /*OK*/decodeURIComponent(component);
-    } catch (e) {
-      return fallback;
-    }
   }
 
   /**
@@ -78,8 +65,8 @@ class AmpWebPushPermissionDialog {
     let match;
     const regex = /(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;
     while ((match = regex.exec(queryString))) {
-      const name = this.tryDecodeUriComponent(match[1]).trim();
-      const value = match[2] ? this.tryDecodeUriComponent(match[2]).trim() : '';
+      const name = tryDecodeUriComponent(match[1]).trim();
+      const value = match[2] ? tryDecodeUriComponent(match[2]).trim() : '';
       params[name] = value;
     }
     return params;
@@ -91,10 +78,11 @@ class AmpWebPushPermissionDialog {
 
       this.requestNotificationPermission().then(permission => {
         return this.ampMessenger.send(
-          WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
-          permission
+            WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
+            permission
         );
-      }).then(([message, _]) => {
+      }).then(result => {
+        const message = result[0];
         if (message && message.closeFrame) {
           window.close();
         }
@@ -102,15 +90,17 @@ class AmpWebPushPermissionDialog {
     } else {
       const queryParams = this.parseQueryString(window.location.search);
       if (!queryParams['return']) {
-        throw new Error('Expecting return URL query parameter to redirect back.');
+        throw new Error(
+          'Expecting return URL query parameter to redirect back.');
       }
-      this.requestNotificationPermission().then(permission => {
-        window.location.href = this.tryDecodeUriComponent(queryParams['return']);
+      this.requestNotificationPermission().then(() => {
+        window.location.href =
+          this.tryDecodeUriComponent(queryParams['return']);
       });
     }
   }
 }
 
 new AmpWebPushPermissionDialog({
-  debug: true
+  debug: true,
 }).run();

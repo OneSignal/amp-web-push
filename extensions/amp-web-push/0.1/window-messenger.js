@@ -232,7 +232,7 @@ export class WindowMessenger {
     // This is the remote frame's reply to our initial handshake topic message
     this.connected = true;
     if (this.debug) {
-      console/*OK*/.log(`Messenger channel to ${expectedRemoteOrigin}` +
+      console/*OK*/.log(`Messenger channel to ${expectedRemoteOrigin} ` +
         'established.');
     }
     // Remove our message handler

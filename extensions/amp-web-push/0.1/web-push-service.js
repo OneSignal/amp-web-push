@@ -598,7 +598,7 @@ export class WebPushService {
       WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
 
     const permissionDialogUrlHasQueryParams =
-      location.href.indexOf('?') !== -1;
+      this.config_.permissionDialogUrl.indexOf('?') !== -1;
     const permissionDialogUrlQueryParamPrefix =
       permissionDialogUrlHasQueryParams ? '&' : '?';
     // The permission dialog URL, containing the return URL above embedded in a

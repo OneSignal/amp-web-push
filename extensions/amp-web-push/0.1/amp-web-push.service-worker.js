@@ -85,25 +85,27 @@ self.addEventListener('message', event => {
   Broadcasts a single boolean describing whether the user is subscribed.
  */
 function onMessageReceivedSubscriptionState() {
+  let retrievedPushSubscription = null;
   self.registration.pushManager.getSubscription()
-    .then(pushSubscription => {
-      if (!pushSubscription) {
-        return null;
-      } else {
-        return self.registration.pushManager.permissionState(
-            pushSubscription.options
+      .then(pushSubscription => {
+        retrievedPushSubscription = pushSubscription;
+        if (!pushSubscription) {
+          return null;
+        } else {
+          return self.registration.pushManager.permissionState(
+              pushSubscription.options
         );
-      }
-    }).then(permissionStateOrNull => {
+        }
+      }).then(permissionStateOrNull => {
         if (permissionStateOrNull == null) {
           broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE, false);
         } else {
-          const isSubscribed = !!pushSubscription &&
-            permission === 'granted';
-        broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE,
-          isSubscribed);
+          const isSubscribed = !!retrievedPushSubscription &&
+            permissionStateOrNull === 'granted';
+          broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIPION_STATE,
+              isSubscribed);
         }
-    });
+      });
 }
 
 /**
@@ -116,9 +118,9 @@ function onMessageReceivedSubscribe() {
     userVisibleOnly: true,
     applicationServerKey: 'fake-demo-key',
   }).then(() => {
-  // IMPLEMENT: Forward the push subscription to your server here
-  broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
-  })
+    // IMPLEMENT: Forward the push subscription to your server here
+    broadcastReply(WorkerMessengerCommand.AMP_SUBSCRIBE, null);
+  });
 }
 
 
@@ -129,11 +131,11 @@ function onMessageReceivedSubscribe() {
  */
 function onMessageReceivedUnsubscribe() {
   self.registration.pushManager.getSubscription()
-  .then(subscription => subscription.unsubscribe())
-  .then(() => {
+      .then(subscription => subscription.unsubscribe())
+      .then(() => {
     // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
-    broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
-  };
+        broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
+      });
 }
 
 /**
@@ -141,13 +143,13 @@ function onMessageReceivedUnsubscribe() {
  */
 function broadcastReply(command, payload) {
   self.clients.matchAll()
-  .then(clients => {
-    for (let i = 0; i < clients.length; i++) {
-      const client = clients[i];
-      client./*OK*/postMessage({
-        command,
-        payload,
+      .then(clients => {
+        for (let i = 0; i < clients.length; i++) {
+          const client = clients[i];
+          client./*OK*/postMessage({
+            command,
+            payload,
+          });
+        }
       });
-    }
-  });
 }
