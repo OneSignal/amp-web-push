@@ -38,7 +38,9 @@
 
   <!-- AMP Web Push Extension Configuration
   -->
-  <amp-web-push-config
+   <amp-web-push-config
+    id="amp-web-push"
+    layout="nodisplay"
     helperIframeUrl="https://example.com/helper-iframe.html"
     permissionDialogUrl="https://example.com/permission-dialog.html"
     serviceWorkerUrl="https://example.com/service-worker.js"
@@ -46,11 +48,11 @@
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
-  <amp-web-push id="subscribe-widget-1" visibility="unsubscribed" layout="fixed" width="250" height="80">
-    <button on="tap:subscribe-widget-1.subscribe">Subscribe to Notifications</button>
+  <amp-web-push visibility="unsubscribed" layout="fixed" width="250" height="80">
+    <button on="tap:amp-web-push.subscribe">Subscribe to Notifications</button>
   </amp-web-push>
-  <amp-web-push id="unsubscribe-widget-1" visibility="subscribed" layout="fixed" width="250" height="80">
-    <button on="tap:unsubscribe-widget-1.unsubscribe">Unsubscribe me from Notifications</button>
+  <amp-web-push visibility="subscribed" layout="fixed" width="250" height="80">
+    <button on="tap:amp-web-push.unsubscribe">Unsubscribe me from Notifications</button>
   </amp-web-push>
   <amp-web-push visibility="blocked" layout="fixed" width="250" height="80">
     Looks like you've blocked notifications!
