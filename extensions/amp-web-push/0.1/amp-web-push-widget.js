@@ -14,9 +14,7 @@
  * the License.
  */
 
-import {SERVICE_TAG} from './vars';
 import {Layout} from '../../../src/layout';
-import {getServiceForDoc} from '../../../src/service';
 
 /**
  * @fileoverview
@@ -41,23 +39,6 @@ export class WebPushWidget extends AMP.BaseElement {
   buildCallback() {
     // Hide the element
     this.element.classList.add('amp-invisible');
-
-    this.registerAction(WebPushWidgetActions.SUBSCRIBE,
-        this.onSubscribe_.bind(this));
-    this.registerAction(WebPushWidgetActions.UNSUBSCRIBE,
-        this.onUnsubscribe_.bind(this));
-  }
-
-  /** @private */
-  onSubscribe_() {
-    const webPushService = getServiceForDoc(this.getAmpDoc(), SERVICE_TAG);
-    webPushService.subscribe();
-  }
-
-  /** @private */
-  onUnsubscribe_() {
-    const webPushService = getServiceForDoc(this.getAmpDoc(), SERVICE_TAG);
-    webPushService.unsubscribe();
   }
 }
 
@@ -76,10 +57,4 @@ export const WebPushWidgetVisibilities = {
    * subscribing in Incognito mode.
    */
   BLOCKED: 'blocked',
-};
-
-/** @enum {string} */
-export const WebPushWidgetActions = {
-  SUBSCRIBE: 'subscribe',
-  UNSUBSCRIBE: 'unsubscribe',
 };
