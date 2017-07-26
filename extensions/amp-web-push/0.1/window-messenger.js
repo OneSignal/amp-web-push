@@ -66,6 +66,7 @@ export class WindowMessenger {
     this.onListenConnectionMessageReceivedProc = null;
     this.onConnectConnectionMessageReceivedProc = null;
     this.onChannelMessageReceivedProc = null;
+    this.window_ = options.windowContext || window;
   }
 
   /**
@@ -105,11 +106,11 @@ export class WindowMessenger {
             resolve,
             reject
         );
-      window.addEventListener('message',
+      this.window_.addEventListener('message',
         /** @type {(function (Event): (boolean|undefined)|null)} */
         (this.onListenConnectionMessageReceivedProc));
       if (this.debug) {
-        dev().fine(TAG, 'Listening for a connection message...');
+        console.warn(TAG, 'Listening for a connection message...');
       }
     }).then(() => {
       this.send(WindowMessenger.Topics.CONNECT_HANDSHAKE, null);
@@ -151,27 +152,27 @@ export class WindowMessenger {
     const message = getData(messageChannelEvent);
     const {origin, ports: messagePorts} = messageChannelEvent;
     if (this.debug) {
-      dev().fine(TAG, 'Window message for listen() connection ' +
+      console.warn(TAG, 'Window message for listen() connection ' +
         'received:', message);
     }
     if (!this.isAllowedOrigin(origin, allowedOrigins)) {
-      dev().fine(TAG, `Discarding connection message from ${origin} ` +
+      console.warn(TAG, `Discarding connection message from ${origin} ` +
         'because it isn\'t an allowed origin:', message, ' (allowed ' +
         ' origins are)', allowedOrigins);
       return;
     }
     if (!message ||
          message['topic'] !== WindowMessenger.Topics.CONNECT_HANDSHAKE) {
-      dev().fine(TAG, 'Discarding connection message because it did ' +
+      console.warn(TAG, 'Discarding connection message because it did ' +
         'not contain our expected handshake:', message);
       return;
     }
 
-    dev().fine(TAG, 'Received expected connection handshake ' +
+    console.warn(TAG, 'Received expected connection handshake ' +
       'message:', message);
     // This was our expected handshake message Remove our message handler so we
     // don't get spammed with cross-domain messages
-    window.removeEventListener('message',
+    this.window_.removeEventListener('message',
         /** @type {(function (Event): (boolean|undefined)|null)} */
         (this.onListenConnectionMessageReceivedProc));
     // Get the message port
@@ -230,7 +231,7 @@ export class WindowMessenger {
         }), expectedRemoteOrigin === '*' ?
                 '*' :
                 parseUrl(expectedRemoteOrigin).origin, [this.channel.port2]);
-      dev().fine(TAG, `Opening channel to ${expectedRemoteOrigin}...`);
+      console.warn(TAG, `Opening channel to ${expectedRemoteOrigin}...`);
     });
   }
 
@@ -242,7 +243,7 @@ export class WindowMessenger {
     // This is the remote frame's reply to our initial handshake topic message
     this.connected = true;
     if (this.debug) {
-      dev().fine(TAG, `Messenger channel to ${expectedRemoteOrigin} ` +
+      console.warn(TAG, `Messenger channel to ${expectedRemoteOrigin} ` +
         'established.');
     }
     // Remove our message handler
@@ -281,7 +282,7 @@ export class WindowMessenger {
         // Set new incoming message data on existing message
       existingMessage.message = message['data'];
       if (this.debug) {
-        dev().fine(TAG, `Received reply for topic '${message['topic']}':`,
+        console.warn(TAG, `Received reply for topic '${message['topic']}':`,
             message['data']);
       }
       promiseResolver([
@@ -294,7 +295,7 @@ export class WindowMessenger {
         return;
       }
       if (this.debug) {
-        dev().fine(TAG, 'Received new message for ' +
+        console.warn(TAG, 'Received new message for ' +
           `topic '${message['topic']}': ${message['data']}`);
       }
       for (let i = 0; i < listeners.length; i++) {
@@ -382,7 +383,7 @@ export class WindowMessenger {
       data,
     };
     if (this.debug) {
-      dev().fine(TAG, `Sending ${topic}:`, data);
+      console.warn(TAG, `Sending ${topic}:`, data);
     }
     this.messagePort./*OK*/postMessage(payload);
 

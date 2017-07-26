@@ -23,7 +23,7 @@ import {WindowMessenger} from './window-messenger';
  * eventually live on the publisher's origin. It shows the notification prompt
  * and forwards results to the AMP page.
  */
-class AmpWebPushPermissionDialog {
+export class AmpWebPushPermissionDialog {
   constructor(options) {
     if (options && options.debug) {
       // Debug enables verbose logging for this page and the window and worker
@@ -115,7 +115,3 @@ class AmpWebPushPermissionDialog {
     }
   }
 }
-
-new AmpWebPushPermissionDialog({
-  debug: true,
-}).run();

@@ -25,7 +25,7 @@ import {WindowMessenger} from './window-messenger';
   * canonical origin to query the user's permission state, register service
   * workers, and enable communication with the registered service worker.
   */
-class AmpWebPushHelperFrame {
+export class AmpWebPushHelperFrame {
   constructor(options) {
     if (options && options.debug) {
       // Debug enables verbose logging for this page and the window and worker
@@ -33,9 +33,12 @@ class AmpWebPushHelperFrame {
       this.debug = true;
     }
 
+    this.window_ = options.windowContext || window;
+
     // For communication between the AMP page and this helper iframe
     this.ampMessenger = new WindowMessenger({
       debug: this.debug,
+      windowContext: this.window_,
     });
 
     /*
@@ -82,32 +85,32 @@ class AmpWebPushHelperFrame {
         communication with the service worker isn't possible since the
         controller is null.
        */
-      isControllingFrame: !!navigator.serviceWorker.controller,
+      isControllingFrame: !!this.window_.navigator.serviceWorker.controller,
       /*
         The URL to the service worker script.
        */
-      url: navigator.serviceWorker.controller ?
-        navigator.serviceWorker.controller.scriptURL :
+      url: this.window_.navigator.serviceWorker.controller ?
+        this.window_.navigator.serviceWorker.controller.scriptURL :
         null,
       /*
         The state of the service worker, one of "installing, waiting,
         activating, activated".
        */
-      state: navigator.serviceWorker.controller ?
-        navigator.serviceWorker.controller.state :
+      state: this.window_.navigator.serviceWorker.controller ?
+        this.window_.navigator.serviceWorker.controller.state :
         null,
     };
 
     this.replyToFrameWithPayload(replyToFrame, true, null, serviceWorkerState);
   }
 
-  onAmpPageMessageReceivedServiceWorkerRegistration_(message, replyToFrame) {
+  onAmpPageMessageReceivedServiceWorkerRegistration(message, replyToFrame) {
     if (!message || !message.workerUrl || !message.registrationOptions) {
       throw new Error('Expected arguments workerUrl and registrationOptions ' +
       'in message, got:', message);
     }
 
-    navigator.serviceWorker.register(
+    this.window_.navigator.serviceWorker.register(
         message.workerUrl,
         message.registrationOptions
     ).then(() => {
@@ -131,7 +134,7 @@ class AmpWebPushHelperFrame {
 
       // The AMP message is forwarded to the service worker
       this.waitUntilWorkerControlsPage().then(() => {
-        navigator.serviceWorker.controller./*OK*/postMessage({
+        this.window_.navigator.serviceWorker.controller./*OK*/postMessage({
           command: message.topic,
           payload: message.payload,
         });
@@ -176,7 +179,7 @@ class AmpWebPushHelperFrame {
   }
 
   getParentOrigin() {
-    const queryParams = this.parseQueryString(window.location.search);
+    const queryParams = this.parseQueryString(this.window_.location.search);
     if (!queryParams['parentOrigin']) {
       throw new Error('Expecting parentOrigin URL query parameter.');
     }
@@ -208,9 +211,9 @@ class AmpWebPushHelperFrame {
     activated.
    */
   isWorkerControllingPage_() {
-    return navigator.serviceWorker &&
-      navigator.serviceWorker.controller &&
-      navigator.serviceWorker.controller.state === 'activated';
+    return this.window_.navigator.serviceWorker &&
+      this.window_.navigator.serviceWorker.controller &&
+      this.window_.navigator.serviceWorker.controller.state === 'activated';
   }
 
   /**
@@ -222,12 +225,12 @@ class AmpWebPushHelperFrame {
       if (this.isWorkerControllingPage_()) {
         resolve();
       } else {
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        this.window_.navigator.serviceWorker.addEventListener('controllerchange', () => {
           // Service worker has been claimed
           if (this.isWorkerControllingPage_()) {
             resolve();
           } else {
-            navigator.serviceWorker.controller.addEventListener(
+            this.window_.navigator.serviceWorker.controller.addEventListener(
                 'statechange',
                 () => {
                   if (this.isWorkerControllingPage_()) {
@@ -241,7 +244,14 @@ class AmpWebPushHelperFrame {
     });
   }
 
-  run() {
+  /**
+   * Sets up message listeners for messages from the AMP page and service
+   * worker.
+   *
+   * @param {string|null} allowedOrigin For testing purposes only. Pass in the
+   * allowedOrigin since test environments cannot access the parent origin.
+   */
+  run(allowedOrigin) {
     this.ampMessenger.on(
         WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
         this.onAmpPageMessageReceivedNotificationPermissionState_.bind(this)
@@ -252,7 +262,7 @@ class AmpWebPushHelperFrame {
     );
     this.ampMessenger.on(
         WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
-        this.onAmpPageMessageReceivedServiceWorkerRegistration_.bind(this)
+        this.onAmpPageMessageReceivedServiceWorkerRegistration.bind(this)
     );
     this.ampMessenger.on(
         WindowMessenger.Topics.SERVICE_WORKER_QUERY,
@@ -260,13 +270,9 @@ class AmpWebPushHelperFrame {
     );
 
     this.waitUntilWorkerControlsPage().then(() => {
-      navigator.serviceWorker.addEventListener('message',
+      this.window_.navigator.serviceWorker.addEventListener('message',
           this.onPageMessageReceivedFromServiceWorker_.bind(this));
     });
-    this.ampMessenger.listen([this.getParentOrigin()]);
+    this.ampMessenger.listen([allowedOrigin || this.getParentOrigin()]);
   }
 }
-
-new AmpWebPushHelperFrame({
-  debug: true,
-}).run();

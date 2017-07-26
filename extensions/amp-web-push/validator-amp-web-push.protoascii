@@ -14,7 +14,7 @@
 # limitations under the license.
 #
 
-tags: {  # amp-web-push
+tags: {  # amp-web-push script tag
   html_format: AMP
   tag_name: "SCRIPT"
   extension_spec: {
@@ -24,7 +24,37 @@ tags: {  # amp-web-push
   }
   attr_lists: "common-extension-attrs"
 }
-tags: {  # <amp-web-push>
+tags: {  # <amp-web-push-config> element tag
+  html_format: AMP
+  tag_name: "AMP-WEB-PUSH-CONFIG"
+  requires_extension: "amp-web-push"
+  attrs: {
+    name: "id"
+    value_regex: "amp-web-push"
+    mandatory: true
+  }
+  attrs: {
+    name: "helperIframeUrl"
+    value_regex: "https:\/\/.*"
+    mandatory: true
+  }
+  attrs: {
+    name: "permissionDialogUrl"
+    value_regex: "https:\/\/.*"
+    mandatory: true
+  }
+  attrs: {
+    name: "serviceWorkerUrl"
+    value_regex: "https:\/\/.*"
+    mandatory: true
+  }
+  attr_lists: "extended-amp-global"
+  spec_url: "https://www.ampproject.org/docs/reference/components/amp-web-push"
+  amp_layout: {
+    supported_layouts: NODISPLAY
+  }
+}
+tags: {  # <amp-web-push> widget element tag
   html_format: AMP
   tag_name: "AMP-WEB-PUSH"
   requires_extension: "amp-web-push"

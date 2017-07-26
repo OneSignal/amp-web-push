@@ -93,8 +93,14 @@ export class WebPushService {
     /** @private {./iframehost.IFrameHost} */
     this.iframe_ = null;
 
-    /** @private {./window-messenger.WindowMessenger} */
-    this.frameMessenger_ = null;
+    /**
+     * Create a postMessage() helper to listen for messages
+     *
+     * @private {./window-messenger.WindowMessenger}
+     */
+    this.frameMessenger_ = new WindowMessenger({
+      debug: this.debug_,
+    });
 
     /** @private {./window-messenger.WindowMessenger} */
     this.popupMessenger_ = null;
@@ -105,6 +111,44 @@ export class WebPushService {
   * @returns {(Promise|null|undefined)}
   */
   start(configJson) {
+    this.initializeConfig(configJson);
+
+    // Add the IFrame
+    const iframeLoadPromise = this.installHelperFrame();
+
+    iframeLoadPromise.then(() => {
+      dev().fine(TAG, `Helper frame ${this.config_.helperIframeUrl} DOM ` +
+        'loaded. Connecting to the frame via postMessage()...');
+      return this.frameMessenger_.connect(
+          this.iframe_.getDomElement().contentWindow,
+          new URL(this.config_.helperIframeUrl).origin);
+    }).then(() => {
+      if (this.isContinuingSubscriptionFromRedirect_()) {
+        this.resumeSubscribingForPushNotifications_();
+      } else {
+        return this.updateWidgetVisibilities();
+      }
+      });
+
+    return iframeLoadPromise;
+  }
+
+
+  /**
+   * Returns the IFrame element.
+   *
+   * Visible for testing.
+   */
+  setIframeElement(value) {
+    return this.iframe_ = value;
+  }
+
+  /**
+   * Parses service configuration and determines environment compatibility.
+   *
+   * @param {Object} configJson
+   */
+  initializeConfig(configJson) {
     dev().fine(TAG, 'amp-web-push extension starting up.');
 
     // Exit early if web push isn't supported
@@ -119,7 +163,14 @@ export class WebPushService {
       // An error will already be thrown from the config parsing function
       return;
     }
+  }
 
+  /**
+   * Installs the helper IFrame onto the AMP page.
+   *
+   * Visible for testing.
+   */
+  installHelperFrame() {
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
     // postMessage() calls from
     const helperUrlHasQueryParams =
@@ -127,30 +178,13 @@ export class WebPushService {
     const helperUrlQueryParamPrefix = helperUrlHasQueryParams ? '&' : '?';
     const finalIframeUrl =
       `${this.config_.helperIframeUrl}${helperUrlQueryParamPrefix}` +
-      `parentOrigin=${this.ampdoc.win.location.origin }`;
+      `parentOrigin=${this.ampdoc.win.location.origin}`;
 
     // Create a hidden iFrame to check subscription state
     this.iframe_ = new IFrameHost(this.ampdoc, finalIframeUrl);
 
-    // Create a postMessage() helper to listen for messages
-    this.frameMessenger_ = new WindowMessenger({
-      debug: this.debug_,
-    });
-
     // Load the iFrame asychronously in the background
-    return this.iframe_.load().then(() => {
-      dev().fine(TAG, `Helper frame ${this.config_.helperIframeUrl} DOM ` +
-        'loaded. Connecting to the frame via postMessage()...');
-      this.frameMessenger_.connect(
-          this.iframe_.getDomElement().contentWindow,
-          new URL(this.config_.helperIframeUrl).origin);
-    }).then(() => {
-      if (this.isContinuingSubscriptionFromRedirect_()) {
-        this.resumeSubscribingForPushNotifications_();
-      } else {
-        return this.updateWidgetVisibilities();
-      }
-    });
+    return this.iframe_.load();
   }
 
   /** @private */
@@ -237,8 +271,11 @@ export class WebPushService {
     );
   }
 
-  /** @private */
-  queryNotificationPermission_() {
+  /**
+   * Queries the helper iframe for the notification permission on the canonical
+   * origin.
+   */
+  queryNotificationPermission() {
     return this.queryHelperFrame_(
         WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
         null
@@ -270,7 +307,7 @@ export class WebPushService {
   }
 
   /** @private */
-  querySubscriptionStateRemotely_() {
+  querySubscriptionStateRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscription-state',
         null
@@ -294,7 +331,7 @@ export class WebPushService {
   }
 
   /** @private */
-  isServiceWorkerActivated_() {
+  isServiceWorkerActivated() {
     const self = this;
     return this.queryServiceWorkerState_().then(
         function(serviceWorkerState) {
@@ -348,11 +385,11 @@ export class WebPushService {
    * unsubscription widgets.
    */
   updateWidgetVisibilities() {
-    return this.queryNotificationPermission_().then(notificationPermission => {
+    return this.queryNotificationPermission().then(notificationPermission => {
       if (notificationPermission === NotificationPermission.DENIED) {
         this.updateWidgetVisibilitiesNotificationPermissionsBlocked_();
       } else {
-        return this.isServiceWorkerActivated_().then(
+        return this.isServiceWorkerActivated().then(
             isServiceWorkerActivated => {
               if (isServiceWorkerActivated) {
                 this.updateWidgetVisibilitiesServiceWorkerActivated_();
@@ -373,7 +410,7 @@ export class WebPushService {
 
   /** @private */
   updateWidgetVisibilitiesServiceWorkerActivated_() {
-    return this.querySubscriptionStateRemotely_().then(reply => {
+    return this.querySubscriptionStateRemotely().then(reply => {
       /*
         This Promise will never resolve if the service worker does not support
         amp-web-push, and widgets will stay hidden.
@@ -548,7 +585,7 @@ export class WebPushService {
             this.ampdoc.win.location.href)
     );
 
-    this.queryNotificationPermission_()
+    this.queryNotificationPermission()
         .then(permission => {
           switch (permission) {
             case NotificationPermission.DENIED:
@@ -594,7 +631,7 @@ export class WebPushService {
    */
   arePushRelatedApisSupported_() {
     return this.ampdoc.win.Notification !== undefined &&
-      navigator.serviceWorker !== undefined &&
+      this.ampdoc.win.navigator.serviceWorker !== undefined &&
       this.ampdoc.win.PushManager !== undefined;
   }
 
@@ -619,6 +656,8 @@ export class WebPushService {
     @private
    */
   isAmpPageHttps_() {
-    return location.protocol === 'https:';
+    return this.ampdoc.win.location.protocol === 'https:' ||
+      getMode().development ||
+      getMode().test;
   }
 }

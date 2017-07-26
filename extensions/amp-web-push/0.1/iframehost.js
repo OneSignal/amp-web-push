@@ -16,6 +16,7 @@
 
 import {setStyle} from '../../../src/style';
 import {loadPromise} from '../../../src/event-helper';
+import {createIframeWithMessageStub} from '../../../testing/iframe';
 
  /** @fileoverview
  * Wraps the creation of an invisible sandboxed IFrame. Exposes a load() method
@@ -25,6 +26,7 @@ export class IFrameHost {
   /**
    * @param {!../../../src/service/ampdoc-impl.AmpDoc} ampdoc
    * @param {string} url
+   *
    */
   constructor(ampdoc, url) {
     /**
