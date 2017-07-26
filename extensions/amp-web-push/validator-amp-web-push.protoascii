@@ -34,17 +34,17 @@ tags: {  # <amp-web-push-config> element tag
     mandatory: true
   }
   attrs: {
-    name: "helperIframeUrl"
+    name: "helper-iframe-url"
     value_regex: "https:\/\/.*"
     mandatory: true
   }
   attrs: {
-    name: "permissionDialogUrl"
+    name: "permission-dialog-url"
     value_regex: "https:\/\/.*"
     mandatory: true
   }
   attrs: {
-    name: "serviceWorkerUrl"
+    name: "service-worker-url"
     value_regex: "https:\/\/.*"
     mandatory: true
   }

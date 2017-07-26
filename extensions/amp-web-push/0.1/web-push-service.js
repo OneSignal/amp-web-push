@@ -81,9 +81,9 @@ export class WebPushService {
 
     /** @private {Object} */
     this.config_ = {
-      helperIframeUrl: null,
-      permissionDialogUrl: null,
-      serviceWorkerUrl: null,
+      'helper-iframe-url': null,
+      'permission-dialog-url': null,
+      'service-worker-url': null,
       debug: null,
     };
 
@@ -117,11 +117,11 @@ export class WebPushService {
     const iframeLoadPromise = this.installHelperFrame();
 
     iframeLoadPromise.then(() => {
-      dev().fine(TAG, `Helper frame ${this.config_.helperIframeUrl} DOM ` +
+      dev().fine(TAG, `Helper frame ${this.config_['helper-iframe-url']} DOM ` +
         'loaded. Connecting to the frame via postMessage()...');
       return this.frameMessenger_.connect(
           this.iframe_.getDomElement().contentWindow,
-          new URL(this.config_.helperIframeUrl).origin);
+          new URL(this.config_['helper-iframe-url']).origin);
     }).then(() => {
       if (this.isContinuingSubscriptionFromRedirect_()) {
         this.resumeSubscribingForPushNotifications_();
@@ -174,10 +174,10 @@ export class WebPushService {
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
     // postMessage() calls from
     const helperUrlHasQueryParams =
-      this.config_.helperIframeUrl.indexOf('?') !== -1;
+      this.config_['helper-iframe-url'].indexOf('?') !== -1;
     const helperUrlQueryParamPrefix = helperUrlHasQueryParams ? '&' : '?';
     const finalIframeUrl =
-      `${this.config_.helperIframeUrl}${helperUrlQueryParamPrefix}` +
+      `${this.config_['helper-iframe-url']}${helperUrlQueryParamPrefix}` +
       `parentOrigin=${this.ampdoc.win.location.origin}`;
 
     // Create a hidden iFrame to check subscription state
@@ -299,7 +299,7 @@ export class WebPushService {
     return this.queryHelperFrame_(
         WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
         {
-          workerUrl: this.config_.serviceWorkerUrl,
+          workerUrl: this.config_['service-worker-url'],
           registrationOptions: this.config_.serviceWorkerRegistrationOptions ||
           {scope: '/'},
         }
@@ -338,7 +338,7 @@ export class WebPushService {
           const isControllingFrame =
             serviceWorkerState.isControllingFrame === true;
           const serviceWorkerHasCorrectUrl =
-            serviceWorkerState.url === self.config_.serviceWorkerUrl;
+            serviceWorkerState.url === self.config_['service-worker-url'];
           const serviceWorkerActivated =
           serviceWorkerState.state === 'activated';
 
@@ -461,7 +461,7 @@ export class WebPushService {
     this.popupMessenger_ = new WindowMessenger({
       debug: this.debug_,
     });
-    this.popupMessenger_.listen([this.config_.permissionDialogUrl]);
+    this.popupMessenger_.listen([this.config_['permission-dialog-url']]);
 
     /*
       At this point, the popup most likely opened and we can communicate with it
@@ -552,13 +552,13 @@ export class WebPushService {
       WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
 
     const permissionDialogUrlHasQueryParams =
-      this.config_.permissionDialogUrl.indexOf('?') !== -1;
+      this.config_['permission-dialog-url'].indexOf('?') !== -1;
     const permissionDialogUrlQueryParamPrefix =
       permissionDialogUrlHasQueryParams ? '&' : '?';
     // The permission dialog URL, containing the return URL above embedded in a
     // query parameter
     const openingPopupUrl =
-      this.config_.permissionDialogUrl +
+      this.config_['permission-dialog-url'] +
       permissionDialogUrlQueryParamPrefix +
       `return=${encodeURIComponent(returningPopupUrl) }`;
 

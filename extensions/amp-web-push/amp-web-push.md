@@ -74,9 +74,9 @@ amp-web-push requires extra integration on your site. You will need to upload tw
 
 ```html
 <amp-web-push-config
-  helperIframeUrl="https://example.com/helper-iframe.html"
-  permissionDialogUrl="https://example.com/permission-dialog.html"
-  serviceWorkerUrl="https://example.com/service-worker.js"
+  helper-iframe-url="https://example.com/helper-iframe.html"
+  permission-dialog-url="https://example.com/permission-dialog.html"
+  service-worker-url="https://example.com/service-worker.js"
 ></amp-web-push-config>
 ```
 
@@ -88,7 +88,7 @@ All properties are <strong>required</strong>, and all URLs must begin with the s
     <th class="col-fourty">Description</th>
   </tr>
   <tr>
-    <td><code>helperIframeUrl</code></td>
+    <td><code>helper-iframe-url</code></td>
     <td>
     <p>
       <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/helper-frame.html">Download <code>helper-iframe.html</code> here</a> and upload it to your site.
@@ -102,7 +102,7 @@ All properties are <strong>required</strong>, and all URLs must begin with the s
     </td>
   </tr>
   <tr>
-    <td><code>permissionDialogUrl</code></td>
+    <td><code>permission-dialog-url</code></td>
     <td>
     <p>
       <a href="https://github.com/ampproject/amphtml/blob/master/extensions/amp-web-push/publisher-files/permission-dialog.html">Download <code>permission-dialog.html</code> here</a> and upload it to your site.
@@ -116,7 +116,7 @@ All properties are <strong>required</strong>, and all URLs must begin with the s
     </td>
   </tr>
   <tr>
-    <td><code>serviceWorkerUrl</code></td>
+    <td><code>service-worker-url</code></td>
     <td>
       <p>
         The absolute URL, starting with <code>https://</code>, to the JavaScript service worker file uploaded to your site. Use a service worker compatible with amp-web-push.

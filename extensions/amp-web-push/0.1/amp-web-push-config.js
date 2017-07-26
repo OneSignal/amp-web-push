@@ -23,9 +23,9 @@ import {parseUrl} from '../../../src/url';
 
 /** @enum {string} */
 export const WebPushConfigAttributes = {
-  HELPER_FRAME_URL: 'helperIframeUrl',
-  PERMISSION_DIALOG_URL: 'permissionDialogUrl',
-  SERVICE_WORKER_URL: 'serviceWorkerUrl',
+  HELPER_FRAME_URL: 'helper-iframe-url',
+  PERMISSION_DIALOG_URL: 'permission-dialog-url',
+  SERVICE_WORKER_URL: 'service-worker-url',
 };
 
 /**
@@ -57,9 +57,9 @@ export class WebPushConfig extends AMP.BaseElement {
     this.ensureUniqueElement_();
 
     const config = {
-      helperIframeUrl: null,
-      permissionDialogUrl: null,
-      serviceWorkerUrl: null,
+      'helper-iframe-url': null,
+      'permission-dialog-url': null,
+      'service-worker-url': null,
     };
 
     for (const attribute in WebPushConfigAttributes) {
@@ -69,35 +69,35 @@ export class WebPushConfig extends AMP.BaseElement {
       config[value] = this.element.getAttribute(value);
     }
 
-    if (!this.isValidHelperOrPermissionDialogUrl_(config['helperIframeUrl'])) {
+    if (!this.isValidHelperOrPermissionDialogUrl_(config['helper-iframe-url'])) {
       throw user().createError(`<${CONFIG_TAG}> must have a valid ` +
-        'helperIframeUrl attribute. It should begin with ' +
+        'helper-iframe-url attribute. It should begin with ' +
         'the https:// protocol and point to the provided lightweight ' +
         'template page provided for AMP messaging.');
     }
 
     if (!this.isValidHelperOrPermissionDialogUrl_(
-        config['permissionDialogUrl'])) {
+        config['permission-dialog-url'])) {
       throw user().createError(`<${CONFIG_TAG}> must have a valid ` +
-        'permissionDialogUrl attribute. It should begin with ' +
+        'permission-dialog-url attribute. It should begin with ' +
         'the https:// protocol and point to the provided template page ' +
         'for showing the permission prompt.');
     }
 
-    if (parseUrl(config['serviceWorkerUrl']).protocol !== 'https:') {
+    if (parseUrl(config['service-worker-url']).protocol !== 'https:') {
       throw user().createError(`<${CONFIG_TAG}> must have a valid ` +
-        'serviceWorkerUrl attribute. It should begin with the ' +
+        'service-worker-url attribute. It should begin with the ' +
         'https:// protocol and point to the service worker JavaScript file ' +
         'to be installed.');
     }
 
-    if (parseUrl(config['serviceWorkerUrl']).origin !==
-          parseUrl(config['permissionDialogUrl']).origin ||
-        parseUrl(config['permissionDialogUrl']).origin !==
-        parseUrl(config['helperIframeUrl']).origin) {
+    if (parseUrl(config['service-worker-url']).origin !==
+          parseUrl(config['permission-dialog-url']).origin ||
+        parseUrl(config['permission-dialog-url']).origin !==
+        parseUrl(config['helper-iframe-url']).origin) {
       throw user().createError(`<${CONFIG_TAG}> URL attributes ` +
-        'serviceWorkerUrl, permissionDialogUrl, and ' +
-        'helperIframeUrl must all share the same origin.');
+        'service-worker-url, permission-dialog-url, and ' +
+        'helper-iframe-url must all share the same origin.');
     }
   }
 
@@ -128,11 +128,7 @@ export class WebPushConfig extends AMP.BaseElement {
   * Parses the JSON configuration and returns a JavaScript object.
   */
   parseConfig() {
-    const config = {
-      helperIframeUrl: null,
-      permissionDialogUrl: null,
-      serviceWorkerUrl: null,
-    };
+    let config = {};
 
     for (const attribute in WebPushConfigAttributes) {
       const value = WebPushConfigAttributes[attribute];
@@ -172,11 +168,11 @@ export class WebPushConfig extends AMP.BaseElement {
     try {
       const parsedUrl = parseUrl(url);
       /*
-        The helperIframeUrl must be to a specific lightweight page on the user's
+        The helper-iframe-url must be to a specific lightweight page on the user's
         site for handling AMP postMessage calls without loading push
         vendor-specific SDKs or other resources. It should not be the site root.
 
-        The permissionDialogUrl can load push vendor-specific SDKs, but it
+        The permission-dialog-url can load push vendor-specific SDKs, but it
         should still not be the site root and should be a dedicated page for
         subscribing.
       */
