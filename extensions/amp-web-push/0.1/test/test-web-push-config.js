@@ -17,37 +17,40 @@
 import {WebPushService} from '../web-push-service';
 import {TAG, CONFIG_TAG} from '../vars';
 import {toggleExperiment} from '../../../../src/experiments';
-import {WebPushConfigAttributes} from '../amp-web-push-config';
+import {WebPushConfigAttributes, WebPushConfig} from '../amp-web-push-config';
 
 describes.realWin('web-push-config', {
   amp: true,
 }, env => {
   let win;
-  const webPushConfig = {};
+  let webPushConfig = {};
 
-  function setDefaultConfigParams_() {
+  function setDefaultWebPushConfig() {
+    let webPushConfig = {};
     webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
       'https://a.com/webpush/amp/helper?https=1';
     webPushConfig[WebPushConfigAttributes.PERMISSION_DIALOG_URL] =
       'https://a.com/webpush/amp/subscribe?https=1';
     webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL] =
       'https://a.com/service-worker.js?param=value';
+    return webPushConfig;
   }
 
   beforeEach(() => {
     win = env.win;
-    setDefaultConfigParams_();
+    webPushConfig = setDefaultWebPushConfig();
     toggleExperiment(env.win, TAG, true);
   });
 
-  function createWebPushConfig(parameters) {
-    const element = win.document.createElement(CONFIG_TAG);
+  function createConfigElementWithAttributes(attributes) {
+    const element = env.createAmpElement(CONFIG_TAG, WebPushConfig);
     element.setAttribute(WebPushConfigAttributes.HELPER_FRAME_URL,
-        parameters[WebPushConfigAttributes.HELPER_FRAME_URL]);
+        attributes[WebPushConfigAttributes.HELPER_FRAME_URL]);
     element.setAttribute(WebPushConfigAttributes.PERMISSION_DIALOG_URL,
-        parameters[WebPushConfigAttributes.PERMISSION_DIALOG_URL]);
+        attributes[WebPushConfigAttributes.PERMISSION_DIALOG_URL]);
     element.setAttribute(WebPushConfigAttributes.SERVICE_WORKER_URL,
-        parameters[WebPushConfigAttributes.SERVICE_WORKER_URL]);
+      attributes[WebPushConfigAttributes.SERVICE_WORKER_URL]);
+    element.setAttribute('id', TAG);
     win.document.body.appendChild(element);
     return element;
   }
@@ -72,99 +75,109 @@ describes.realWin('web-push-config', {
   });
 
   it('should fail if element does not have correct ID', () => {
-    env.ampdoc.whenReady().then(() => {
+    return env.ampdoc.whenReady().then(() => {
+      const element = createConfigElementWithAttributes(webPushConfig);
+      element.removeAttribute('id');
       expect(() => {
-        const element = createWebPushConfig(webPushConfig);
-        const webPushConfig = element.implementation_;
-        webPushConfig.validate();
-      }).to.throw(/must have an id attribute of value/);
+        element.implementation_.validate();
+      }).to.throw(/must have an id attribute with value/);
     });
   });
 
   it('should fail if page contains duplicate element id', () => {
-    env.ampdoc.whenReady().then(() => {
+    return env.ampdoc.whenReady().then(() => {
+      createConfigElementWithAttributes(webPushConfig);
+      const element = createConfigElementWithAttributes(webPushConfig);
       expect(() => {
-        createWebPushConfig();
-        const element = createWebPushConfig(webPushConfig);
-        const webPushConfig = element.implementation_;
-        webPushConfig.validate();
-      }).to.throw(/only one .* element may exist on a page/);
+        element.implementation_.validate();
+      }).to.throw(/only one .* element may exist on a page/i);
     });
   });
 
   it('should fail if any attribute is missing', () => {
+    const promises = [];
     for (const attribute in WebPushConfigAttributes) {
-      env.ampdoc.whenReady().then(() => {
+      const configName = WebPushConfigAttributes[attribute];
+      const promise = env.ampdoc.whenReady().then(() => {
+        removeAllWebPushConfigElements();
+        webPushConfig = setDefaultWebPushConfig();
+        delete webPushConfig[configName];
+        const element = createConfigElementWithAttributes(webPushConfig);
         expect(() => {
-          delete webPushConfig[attribute];
-          const element = createWebPushConfig(webPushConfig);
-          const webPushConfig = element.implementation_;
-          webPushConfig.validate();
-          removeAllWebPushConfigElements();
-        }).to.throw(/attribute is required/);
+          element.implementation_.validate();
+        }).to.throw(new RegExp('must have a valid ' + configName + ' attribute'));
       });
+      promises.push(promise);
     }
+    return Promise.all(promises);
   });
 
   it('should fail if any attribute is HTTP', () => {
+    const promises = [];
     for (const attribute in WebPushConfigAttributes) {
-      env.ampdoc.whenReady().then(() => {
+      const configName = WebPushConfigAttributes[attribute];
+      const promise = env.ampdoc.whenReady().then(() => {
+        removeAllWebPushConfigElements();
+        webPushConfig[configName] = 'http://example.com/test';
+        const element = createConfigElementWithAttributes(webPushConfig);
         expect(() => {
-          webPushConfig[attribute] = 'http://example.com/test';
-          const element = createWebPushConfig(webPushConfig);
-          const webPushConfig = element.implementation_;
-          webPushConfig.validate();
-          removeAllWebPushConfigElements();
+          element.implementation_.validate();
         }).to.throw(/should begin with the https:\/\/ protocol/);
       });
+      promises.push(promise);
     }
+    return Promise.all(promises);
   });
 
   it('should fail if any attribute is site root page', () => {
+    const promises = [];
     for (const attribute in WebPushConfigAttributes) {
-      env.ampdoc.whenReady().then(() => {
+      const configName = WebPushConfigAttributes[attribute];
+      const promise = env.ampdoc.whenReady().then(() => {
+        removeAllWebPushConfigElements();
+        webPushConfig[configName] = 'http://example.com/';
+        const element = createConfigElementWithAttributes(webPushConfig);
         expect(() => {
-          webPushConfig[attribute] = 'http://example.com/';
-          const element = createWebPushConfig(webPushConfig);
-          const webPushConfig = element.implementation_;
-          webPushConfig.validate();
-          removeAllWebPushConfigElements();
+          element.implementation_.validate();
         }).to.throw(/and point to the/);
       });
+      promises.push(promise);
     }
+    return Promise.all(promises);
   });
 
   it('should fail if any attribute value\'s protocol is missing', () => {
+    const promises = [];
     for (const attribute in WebPushConfigAttributes) {
-      env.ampdoc.whenReady().then(() => {
+      const configName = WebPushConfigAttributes[attribute];
+      const promise = env.ampdoc.whenReady().then(() => {
+        removeAllWebPushConfigElements();
+        webPushConfig[configName] = 'www.example.com/test';
+        const element = createConfigElementWithAttributes(webPushConfig);
         expect(() => {
-          webPushConfig[attribute] = 'www.example.com/test';
-          const element = createWebPushConfig(webPushConfig);
-          const webPushConfig = element.implementation_;
-          webPushConfig.validate();
-          removeAllWebPushConfigElements();
+          element.implementation_.validate();
         }).to.throw(/should begin with the https:\/\/ protocol/);
       });
+      promises.push(promise);
     }
+    return Promise.all(promises);
   });
 
   it('should fail if attribute origins differ', () => {
     webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
       'https://another-origin.com/test';
-    env.ampdoc.whenReady().then(() => {
+    return env.ampdoc.whenReady().then(() => {
+      const element = createConfigElementWithAttributes(webPushConfig);
       expect(() => {
-        const element = createWebPushConfig(webPushConfig);
-        const webPushConfig = element.implementation_;
-        webPushConfig.validate();
+        element.implementation_.validate();
       }).to.throw(/must all share the same origin/);
     });
   });
 
   it('should succeed for valid config', () => {
-    env.ampdoc.whenReady().then(() => {
-      const element = createWebPushConfig(webPushConfig);
-      const webPushConfig = element.implementation_;
-      webPushConfig.validate();
+    return env.ampdoc.whenReady().then(() => {
+      const element = createConfigElementWithAttributes(webPushConfig);
+      element.implementation_.validate();
     });
   });
 });
