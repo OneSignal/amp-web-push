@@ -147,7 +147,7 @@ export class WebPushService {
   /**
    * Parses service configuration and determines environment compatibility.
    *
-   * @param {Object} configJson
+   * @param {!Object} configJson
    */
   initializeConfig(configJson) {
     dev().fine(TAG, 'amp-web-push extension starting up.');
@@ -236,7 +236,7 @@ export class WebPushService {
     This is used by all of our AMP page <-> helper iframe communications.
 
     @private
-    @return {{isControllingFrame:boolean, state:string, url:string}}
+    @return {Promise<{isControllingFrame:boolean, state:string, url:string}>}
    */
   queryHelperFrame_(messageTopic, message) {
     return this.iframe_.whenReady().then(() => {
