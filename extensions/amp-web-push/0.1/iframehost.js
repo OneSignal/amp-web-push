@@ -76,12 +76,17 @@ export class IFrameHost {
   /**
    * Returns the IFrame DOM element.
    *
-   * @return {(Element|null)}
+   * @return {?Element}
    */
   getDomElement() {
     return this.domElement_;
   }
 
+  /**
+   * Returns the IFrame DOM element.
+   *
+   * @return {?Promise}
+   */
   whenReady() {
     return this.loadPromise_;
   }

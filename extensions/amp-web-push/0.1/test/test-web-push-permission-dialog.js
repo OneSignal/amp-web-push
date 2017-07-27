@@ -17,7 +17,7 @@
 import {getMode} from '../../../../src/mode';
 import {WindowMessenger} from '../window-messenger';
 import {IFrameHost} from '../iframehost';
-import {AmpWebPushHelperFrame} from '../helper-frame';
+import {AmpWebPushPermissionDialog} from '../permission-dialog';
 import {WebPushService} from '../web-push-service';
 import {WebPushWidgetVisibilities} from '../amp-web-push-widget';
 import {TAG, CONFIG_TAG, NotificationPermission} from '../vars';
@@ -32,58 +32,7 @@ import * as sinon from 'sinon';
 const FAKE_IFRAME_URL =
   '//ads.localhost:9876/test/fixtures/served/iframe-stub.html#';
 
-describes.realWin('web-push-service environment support', {
-  amp: true,
-}, env => {
-  let win;
-  let webPush;
-
-  beforeEach(() => {
-    win = env.win;
-    toggleExperiment(env.win, TAG, true);
-    webPush = new WebPushService(env.ampdoc);
-  });
-
-  afterEach(() => {
-    toggleExperiment(env.win, TAG, false);
-  });
-
-  it('should report supported environment', () => {
-    expect(webPush.environmentSupportsWebPush()).to.eq(true);
-  });
-
-  it('should not support environment missing Notification API', () => {
-    Object.defineProperty(env.win, 'Notification', {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-      value: undefined
-    });
-    expect(webPush.environmentSupportsWebPush()).to.eq(false);
-  });
-
-  it('should not support environment missing Service Worker API', () => {
-    Object.defineProperty(env.win.navigator, 'serviceWorker', {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-      value: undefined
-    });
-    expect(webPush.environmentSupportsWebPush()).to.eq(false);
-  });
-
-  it('should not support environment missing PushManager API', () => {
-    Object.defineProperty(env.win, 'PushManager', {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-      value: undefined
-    });
-    expect(webPush.environmentSupportsWebPush()).to.eq(false);
-  });
-});
-
-describes.realWin('web-push-service helper frame messaging', {
+describes.realWin('web-push-permission-dialog', {
   amp: true,
 }, env => {
   let win;
@@ -107,8 +56,8 @@ describes.realWin('web-push-service helper frame messaging', {
       const helperIframe = getHelperIframe();
       iframeWindow = helperIframe.contentWindow;
       iframeWindow.WindowMessenger = WindowMessenger;
-      iframeWindow.AmpWebPushHelperFrame = AmpWebPushHelperFrame;
-      iframeWindow.controller = new iframeWindow.AmpWebPushHelperFrame({
+      iframeWindow.AmpWebPushPermissionDialog = AmpWebPushPermissionDialog;
+      iframeWindow.controller = new iframeWindow.AmpWebPushPermissionDialog({
         debug: true,
         windowContext: iframeWindow,
       });

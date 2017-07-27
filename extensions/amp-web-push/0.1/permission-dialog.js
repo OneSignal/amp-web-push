@@ -14,7 +14,7 @@
  * the License.
  */
 
-import {tryDecodeUriComponent} from '../../../src/url.js';
+import {tryDecodeUriComponent,parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 
 /**
@@ -25,25 +25,29 @@ import {WindowMessenger} from './window-messenger';
  */
 export class AmpWebPushPermissionDialog {
   constructor(options) {
-    if (options && options.debug) {
-      // Debug enables verbose logging for this page and the window and worker
-      // messengers
-      this.debug = true;
-    }
+    // Debug enables verbose logging for this page and the window and worker
+    // messengers
+    this.debug_ = options && options.debug;
 
     // For communication between the AMP page and this permission dialog
     this.ampMessenger = new WindowMessenger({
-      debug: this.debug,
+      debug: this.debug_,
     });
   }
 
-  /** @private */
+  /**
+   * @private
+   * @return {boolean}
+   */
   isCurrentDialogPopup_() {
     return !!window.opener &&
       window.opener !== window;
   }
 
-  /** @private */
+  /**
+   * @private
+   * @return {!Promise<string>}
+   */
   requestNotificationPermission_() {
     return new Promise((resolve, reject) => {
       try {
@@ -52,32 +56,6 @@ export class AmpWebPushPermissionDialog {
         reject(e);
       }
     });
-  }
-
-  /**
-   * Parses the query string of an URL. This method returns a simple key/value
-   * map. If there are duplicate keys the latest value is returned.
-   *
-   * This function is implemented in a separate file to avoid a circular
-   * dependency.
-   *
-   * @param {string} queryString
-   * @return {!Object<string>}
-   */
-  parseQueryString(queryString) {
-    const params = Object.create(null);
-    if (!queryString) {
-      return params;
-    }
-
-    let match;
-    const regex = /(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;
-    while ((match = regex.exec(queryString))) {
-      const name = tryDecodeUriComponent(match[1]).trim();
-      const value = match[2] ? tryDecodeUriComponent(match[2]).trim() : '';
-      params[name] = value;
-    }
-    return params;
   }
 
   /**

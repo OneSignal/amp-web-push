@@ -63,6 +63,7 @@ export class WebPushService {
    * @param {!../../../src/service/ampdoc-impl.AmpDoc} ampdoc
    */
   constructor(ampdoc) {
+    /** @const */
     this.ampdoc = ampdoc;
 
     // Enable our AMP extension for development and test environments
@@ -79,7 +80,7 @@ export class WebPushService {
       installStylesForShadowRoot(root, CSS, false, TAG);
     }
 
-    /** @private {Object} */
+    /** @private {!Object} */
     this.config_ = {
       'helper-iframe-url': null,
       'permission-dialog-url': null,
@@ -123,7 +124,7 @@ export class WebPushService {
           this.iframe_.getDomElement().contentWindow,
           new URL(this.config_['helper-iframe-url']).origin);
     }).then(() => {
-      if (this.isContinuingSubscriptionFromRedirect_()) {
+      if (this.isContinuingSubscriptionFromRedirect()) {
         this.resumeSubscribingForPushNotifications_();
       } else {
         return this.updateWidgetVisibilities();
@@ -188,13 +189,14 @@ export class WebPushService {
   }
 
   /** @private */
-  isContinuingSubscriptionFromRedirect_() {
+  isContinuingSubscriptionFromRedirect() {
+    const location = this.ampdoc.win.testLocation || this.ampdoc.win.location;
     return location.search.indexOf(
-        WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
+      WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
   }
 
   /** @private */
-  removePermissionPopupUrlFragmentFromUrl_(url) {
+  removePermissionPopupUrlFragmentFromUrl(url) {
     let urlWithoutFragment =
       url.replace(`?${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
     urlWithoutFragment =
@@ -315,7 +317,7 @@ export class WebPushService {
   }
 
   /** @private */
-  subscribeForPushRemotely_() {
+  subscribeForPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscribe',
         null
@@ -323,7 +325,7 @@ export class WebPushService {
   }
 
   /** @private */
-  unsubscribeFromPushRemotely_() {
+  unsubscribeFromPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-unsubscribe',
         null
@@ -340,7 +342,7 @@ export class WebPushService {
           const serviceWorkerHasCorrectUrl =
             serviceWorkerState.url === self.config_['service-worker-url'];
           const serviceWorkerActivated =
-          serviceWorkerState.state === 'activated';
+            serviceWorkerState.state === 'activated';
 
           return isControllingFrame &&
             serviceWorkerHasCorrectUrl &&
@@ -451,49 +453,49 @@ export class WebPushService {
    *
    * This action is exposed from this service and is called from the
    * <amp-web-push> custom element.
-   *
-   * @public
    */
   subscribe() {
     this.registerServiceWorker();
-    this.openPopupOrRedirect_();
+    this.openPopupOrRedirect();
 
     this.popupMessenger_ = new WindowMessenger({
       debug: this.debug_,
     });
     this.popupMessenger_.listen([this.config_['permission-dialog-url']]);
 
+    return this.onPermissionDialogInteracted().then(result => {
+      return this.handlePermissionDialogInteraction(result);
+    });
+  }
+
+  handlePermissionDialogInteraction(result) {
     /*
       At this point, the popup most likely opened and we can communicate with it
       via postMessage(). Or, in rare environments like Custom Chrome Tabs, this
       entire page was redirected and our code will resume with our page is
       redirected back.
     */
-
-    return this.onNotificationPermissionRequestInteractedMessage_()
-        .then(result => {
-          const permission = result[0];
-          const reply = result[1];
-          switch (permission) {
-            case NotificationPermission.DENIED:
-            // User blocked
-              reply({closeFrame: true});
-              return this.updateWidgetVisibilities();
-            case NotificationPermission.DEFAULT:
-            // User clicked X
-              reply({closeFrame: true});
-              return this.updateWidgetVisibilities();
-            case NotificationPermission.GRANTED:
-              // User allowed
-              reply({closeFrame: true});
-              this.subscribeForPushRemotely_().then(() => {
-                return this.updateWidgetVisibilities();
-              });
-              break;
-            default:
-              throw new Error('Unexpected permission value:', permission);
-          }
+    const permission = result[0];
+    const reply = result[1];
+    switch (permission) {
+      case NotificationPermission.DENIED:
+        // User blocked
+        reply({ closeFrame: true });
+        return this.updateWidgetVisibilities();
+      case NotificationPermission.DEFAULT:
+        // User clicked X
+        reply({ closeFrame: true });
+        return this.updateWidgetVisibilities();
+      case NotificationPermission.GRANTED:
+        // User allowed
+        reply({ closeFrame: true });
+        this.subscribeForPushRemotely().then(() => {
+          return this.updateWidgetVisibilities();
         });
+        break;
+      default:
+        throw new Error('Unexpected permission value:', permission);
+    }
   }
 
   /**
@@ -501,17 +503,15 @@ export class WebPushService {
    *
    * This action is exposed from this service and is called from the
    * <amp-web-push> custom element.
-   *
-   * @public
    */
   unsubscribe() {
-    return this.unsubscribeFromPushRemotely_().then(() => {
+    return this.unsubscribeFromPushRemotely().then(() => {
       return this.updateWidgetVisibilities();
     });
   }
 
   /** @private */
-  onNotificationPermissionRequestInteractedMessage_() {
+  onPermissionDialogInteracted() {
     return new Promise(resolve => {
       this.popupMessenger_.on(
           WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
@@ -541,14 +541,14 @@ export class WebPushService {
   }
 
   /** @private */
-  openPopupOrRedirect_() {
+  openPopupOrRedirect() {
     // Note: Don't wait on promise chains when opening a pop up, otherwise
     // they'll be blocked
 
-    const pageUrlHasQueryParams = location.href.indexOf('?') !== -1;
+    const pageUrlHasQueryParams = this.ampdoc.win.location.href.indexOf('?') !== -1;
     const pageUrlQueryParamPrefix = pageUrlHasQueryParams ? '&' : '?';
     // The URL to return to after the permission dialog closes
-    const returningPopupUrl = location.href + pageUrlQueryParamPrefix +
+    const returningPopupUrl = this.ampdoc.win.location.href + pageUrlQueryParamPrefix +
       WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
 
     const permissionDialogUrlHasQueryParams =
@@ -581,7 +581,7 @@ export class WebPushService {
     this.ampdoc.win.history.replaceState(
         null,
         '',
-        this.removePermissionPopupUrlFragmentFromUrl_(
+        this.removePermissionPopupUrlFragmentFromUrl(
             this.ampdoc.win.location.href)
     );
 
@@ -596,7 +596,7 @@ export class WebPushService {
               return this.updateWidgetVisibilities();
             case NotificationPermission.GRANTED:
             // User allowed
-              this.subscribeForPushRemotely_()
+              this.subscribeForPushRemotely()
                   .then(() => {
                     return this.updateWidgetVisibilities();
                   });

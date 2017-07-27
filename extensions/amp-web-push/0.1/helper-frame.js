@@ -14,7 +14,7 @@
  * the License.
  */
 
-import {tryDecodeUriComponent} from '../../../src/url.js';
+import {tryDecodeUriComponent,parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 
  /**
@@ -124,6 +124,13 @@ export class AmpWebPushHelperFrame {
         });
   }
 
+  messageServiceWorker(message) {
+    this.window_.navigator.serviceWorker.controller./*OK*/postMessage({
+      command: message.topic,
+      payload: message.payload,
+    });
+  }
+
   onAmpPageMessageReceivedServiceWorkerQuery_(message, replyToFrame) {
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
@@ -134,10 +141,7 @@ export class AmpWebPushHelperFrame {
 
       // The AMP message is forwarded to the service worker
       this.waitUntilWorkerControlsPage().then(() => {
-        this.window_.navigator.serviceWorker.controller./*OK*/postMessage({
-          command: message.topic,
-          payload: message.payload,
-        });
+        this.messageServiceWorker(message);
       });
     }).then(workerReplyPayload => {
       delete this.allowedWorkerMessageTopics[message.topic];
@@ -150,32 +154,6 @@ export class AmpWebPushHelperFrame {
           workerReplyPayload
       );
     });
-  }
-
-  /**
-   * Parses the query string of an URL. This method returns a simple key/value
-   * map. If there are duplicate keys the latest value is returned.
-   *
-   * This function is implemented in a separate file to avoid a circular
-   * dependency.
-   *
-   * @param {string} queryString
-   * @return {!Object<string>}
-   */
-  parseQueryString(queryString) {
-    const params = Object.create(null);
-    if (!queryString) {
-      return params;
-    }
-
-    let match;
-    const regex = /(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;
-    while ((match = regex.exec(queryString))) {
-      const name = tryDecodeUriComponent(match[1]).trim();
-      const value = match[2] ? tryDecodeUriComponent(match[2]).trim() : '';
-      params[name] = value;
-    }
-    return params;
   }
 
   getParentOrigin() {

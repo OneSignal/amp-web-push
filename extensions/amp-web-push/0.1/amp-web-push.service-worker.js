@@ -114,6 +114,18 @@ function onMessageReceivedSubscriptionState() {
   The broadcast value is null (not used in the AMP page).
  */
 function onMessageReceivedSubscribe() {
+  /*
+    If you're integrating amp-web-push with an existing service worker, use your
+    existing subscription code. The subscribe() call below is only present to
+    demonstrate its proper location. The 'fake-demo-key' value will not work.
+
+    If you're setting up your own service worker, you'll need to:
+      - Generate a VAPID key (see:
+        https://developers.google.com/web/updates/2016/07/web-push-interop-wins)
+      - Using urlBase64ToUint8Array() from
+        https://github.com/web-push-libs/web-push, convert the VAPID key to a
+        UInt8 array and supply it to applicationServerKey
+   */
   self.registration.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: 'fake-demo-key',
@@ -133,7 +145,7 @@ function onMessageReceivedUnsubscribe() {
   self.registration.pushManager.getSubscription()
       .then(subscription => subscription.unsubscribe())
       .then(() => {
-    // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
+        // OPTIONALLY IMPLEMENT: Forward the unsubscription to your server here
         broadcastReply(WorkerMessengerCommand.AMP_UNSUBSCRIBE, null);
       });
 }
