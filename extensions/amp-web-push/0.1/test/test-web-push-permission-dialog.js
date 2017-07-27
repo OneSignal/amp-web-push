@@ -92,7 +92,7 @@ describes.realWin('web-push-permission-dialog', {
     return webPush.installHelperFrame(webPushConfig).then(() => {
       sandbox.stub(iframeWindow, 'opener', true);
       sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox.spy(iframeWindow.controller, "isCurrentDialogPopup");
+      spy = sandbox.spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(true);
     });
@@ -105,7 +105,7 @@ describes.realWin('web-push-permission-dialog', {
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
       sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox.spy(iframeWindow.controller, "isCurrentDialogPopup");
+      spy = sandbox.spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(false);
     });
@@ -145,7 +145,7 @@ describes.realWin('web-push-permission-dialog', {
       return iframeWindow.controller.run();
     }).then(() => {
       expect(closeStub.calledOnce).to.eq(true);
-    })
+    });
   });
 
   it('should redirect back to original site, when opened from redirect', () => {
@@ -156,10 +156,10 @@ describes.realWin('web-push-permission-dialog', {
         encodeURIComponent('https://another-site.com'));
       sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
       const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
-      spy = sandbox.spy(iframeWindow.controller, "redirectToUrl");
+      spy = sandbox.spy(iframeWindow.controller, 'redirectToUrl');
       return iframeWindow.controller.run();
     }).then(() => {
       expect(spy.withArgs('https://another-site.com').calledOnce).to.eq(true);
-    })
+    });
   });
 });

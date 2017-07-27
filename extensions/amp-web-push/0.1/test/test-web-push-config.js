@@ -26,7 +26,7 @@ describes.realWin('web-push-config', {
   let webPushConfig = {};
 
   function setDefaultWebPushConfig() {
-    let webPushConfig = {};
+    const webPushConfig = {};
     webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
       'https://a.com/webpush/amp/helper?https=1';
     webPushConfig[WebPushConfigAttributes.PERMISSION_DIALOG_URL] =
@@ -49,7 +49,7 @@ describes.realWin('web-push-config', {
     element.setAttribute(WebPushConfigAttributes.PERMISSION_DIALOG_URL,
         attributes[WebPushConfigAttributes.PERMISSION_DIALOG_URL]);
     element.setAttribute(WebPushConfigAttributes.SERVICE_WORKER_URL,
-      attributes[WebPushConfigAttributes.SERVICE_WORKER_URL]);
+        attributes[WebPushConfigAttributes.SERVICE_WORKER_URL]);
     element.setAttribute('id', TAG);
     win.document.body.appendChild(element);
     return element;

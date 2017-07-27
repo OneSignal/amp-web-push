@@ -57,7 +57,7 @@ describes.realWin('web-push-service environment support', {
       enumerable: false,
       configurable: false,
       writable: false,
-      value: undefined
+      value: undefined,
     });
     expect(webPush.environmentSupportsWebPush()).to.eq(false);
   });
@@ -67,7 +67,7 @@ describes.realWin('web-push-service environment support', {
       enumerable: false,
       configurable: false,
       writable: false,
-      value: undefined
+      value: undefined,
     });
     expect(webPush.environmentSupportsWebPush()).to.eq(false);
   });
@@ -77,7 +77,7 @@ describes.realWin('web-push-service environment support', {
       enumerable: false,
       configurable: false,
       writable: false,
-      value: undefined
+      value: undefined,
     });
     expect(webPush.environmentSupportsWebPush()).to.eq(false);
   });
@@ -114,8 +114,8 @@ describes.realWin('web-push-service helper frame messaging', {
       });
       iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
       return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
+          iframeWindow,
+          '*'
       );
     });
   }
@@ -189,8 +189,8 @@ describes.realWin('web-push-service widget visibilities', {
       });
       iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
       return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
+          iframeWindow,
+          '*'
       );
     });
   }
@@ -218,11 +218,11 @@ describes.realWin('web-push-service widget visibilities', {
   });
 
   it('should show blocked widget if permission status query returns blocked', () => {
-    let setWidgetVisibilitiesMock = null;
-    let spy1 = null;
+    const setWidgetVisibilitiesMock = null;
+    const spy1 = null;
 
     return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
+      spy = sandbox.spy(webPush, 'setWidgetVisibilities');
 
       const queryNotificationPermissionStub = sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DENIED));
 
@@ -239,7 +239,7 @@ describes.realWin('web-push-service widget visibilities', {
     let spy = null;
 
     return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
+      spy = sandbox.spy(webPush, 'setWidgetVisibilities');
 
       sandbox.stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(true));
       sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
@@ -258,7 +258,7 @@ describes.realWin('web-push-service widget visibilities', {
     let spy = null;
 
     return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
+      spy = sandbox.spy(webPush, 'setWidgetVisibilities');
 
       sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(false));
       sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
@@ -276,7 +276,7 @@ describes.realWin('web-push-service widget visibilities', {
     let spy = null;
 
     return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
+      spy = sandbox.spy(webPush, 'setWidgetVisibilities');
 
       sandbox.stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(false));
       sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
@@ -300,8 +300,8 @@ describes.realWin('web-push-service widget visibilities', {
 
       iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
+          .returns(Promise.resolve(true));
+      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', message => {
         if (message.topic === 'amp-web-push-subscription-state') {
           done();
         }
@@ -342,8 +342,8 @@ describes.realWin('web-push-service subscribing', {
       });
       iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
       return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
+          iframeWindow,
+          '*'
       );
     });
   }
@@ -376,11 +376,11 @@ describes.realWin('web-push-service subscribing', {
     return setupHelperIframe().then(() => {
       helperFrameSwMessageMock = sandbox.mock(iframeWindow.navigator.serviceWorker);
       helperFrameSwMessageMock.expects('register')
-        .once()
-        .withArgs(webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL], {
-          scope: '/'
-        })
-        .returns(Promise.resolve(true));
+          .once()
+          .withArgs(webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL], {
+            scope: '/',
+          })
+          .returns(Promise.resolve(true));
 
       return webPush.registerServiceWorker();
     }).then(() => {
@@ -394,8 +394,8 @@ describes.realWin('web-push-service subscribing', {
     return setupHelperIframe().then(() => {
       iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
+          .returns(Promise.resolve(true));
+      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', message => {
         if (message.topic === 'amp-web-push-subscribe') {
           done();
         }
@@ -414,17 +414,17 @@ describes.realWin('web-push-service subscribing', {
         '?' +
         WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
       openWindowMock.expects('open')
-        .withArgs(
+          .withArgs(
           webPushConfig['permission-dialog-url'] +
           `?return=${encodeURIComponent(returningPopupUrl)}`, '_blank')
-        .onFirstCall()
-        .returns();
+          .onFirstCall()
+          .returns();
       openWindowMock.expects('open')
-        .withArgs(
+          .withArgs(
           webPushConfig['permission-dialog-url'] +
           `?return=${encodeURIComponent(returningPopupUrl)}`, '_top')
-        .onSecondCall()
-        .returns();
+          .onSecondCall()
+          .returns();
 
       webPush.openPopupOrRedirect();
       openWindowMock.verify();
@@ -486,8 +486,8 @@ describes.realWin('web-push-service unsubscribing', {
       });
       iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
       return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
+          iframeWindow,
+          '*'
       );
     });
   }
@@ -520,8 +520,8 @@ describes.realWin('web-push-service unsubscribing', {
     return setupHelperIframe().then(() => {
       iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
+          .returns(Promise.resolve(true));
+      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', message => {
         if (message.topic === 'amp-web-push-unsubscribe') {
           done();
         }
@@ -535,8 +535,8 @@ describes.realWin('web-push-service unsubscribing', {
     let updateWidgetStub = null;
 
     return setupHelperIframe().then(() => {
-      unsubscribeStub = sandbox.stub(webPush, "unsubscribeFromPushRemotely", () => Promise.resolve());
-      updateWidgetStub = sandbox.stub(webPush, "updateWidgetVisibilities", () => Promise.resolve());
+      unsubscribeStub = sandbox.stub(webPush, 'unsubscribeFromPushRemotely', () => Promise.resolve());
+      updateWidgetStub = sandbox.stub(webPush, 'updateWidgetVisibilities', () => Promise.resolve());
 
       // We've mocked default notification permissions
       return webPush.unsubscribe();

@@ -128,7 +128,7 @@ export class WebPushConfig extends AMP.BaseElement {
   * Parses the JSON configuration and returns a JavaScript object.
   */
   parseConfig() {
-    let config = {};
+    const config = {};
 
     for (const attribute in WebPushConfigAttributes) {
       const value = WebPushConfigAttributes[attribute];

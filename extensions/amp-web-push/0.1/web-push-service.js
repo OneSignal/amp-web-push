@@ -129,7 +129,7 @@ export class WebPushService {
       } else {
         return this.updateWidgetVisibilities();
       }
-      });
+    });
 
     return iframeLoadPromise;
   }
@@ -192,7 +192,7 @@ export class WebPushService {
   isContinuingSubscriptionFromRedirect() {
     const location = this.ampdoc.win.testLocation || this.ampdoc.win.location;
     return location.search.indexOf(
-      WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
+        WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
   }
 
   /** @private */
@@ -480,15 +480,15 @@ export class WebPushService {
     switch (permission) {
       case NotificationPermission.DENIED:
         // User blocked
-        reply({ closeFrame: true });
+        reply({closeFrame: true});
         return this.updateWidgetVisibilities();
       case NotificationPermission.DEFAULT:
         // User clicked X
-        reply({ closeFrame: true });
+        reply({closeFrame: true});
         return this.updateWidgetVisibilities();
       case NotificationPermission.GRANTED:
         // User allowed
-        reply({ closeFrame: true });
+        reply({closeFrame: true});
         this.subscribeForPushRemotely().then(() => {
           return this.updateWidgetVisibilities();
         });
