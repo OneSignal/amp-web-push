@@ -27,6 +27,7 @@ import {
   createIframeWithMessageStub,
   expectPostMessage,
 } from '../../../../testing/iframe';
+import {parseUrl} from '../../../../src/url';
 import * as sinon from 'sinon';
 
 const FAKE_IFRAME_URL =
@@ -50,7 +51,16 @@ describes.realWin('web-push-permission-dialog', {
       FAKE_IFRAME_URL;
   }
 
-  function setupHelperIframe() {
+  /**
+   * Returns the iframe in this testing AMP iframe that partially matches the
+   * URL set in the test config. Partial matches are possible only since query
+   * parameters are appended to the iframe URL.
+   */
+  function getHelperIframe() {
+    return env.win.document.querySelector('iframe');
+  }
+
+  function setupPermissionDialogFrame() {
     webPush.initializeConfig(webPushConfig);
     return webPush.installHelperFrame(webPushConfig).then(() => {
       const helperIframe = getHelperIframe();
@@ -61,21 +71,7 @@ describes.realWin('web-push-permission-dialog', {
         debug: true,
         windowContext: iframeWindow,
       });
-      iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
-      return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
-      );
     });
-  }
-
-  /**
-   * Returns the iframe in this testing AMP iframe that partially matches the
-   * URL set in the test config. Partial matches are possible only since query
-   * parameters are appended to the iframe URL.
-   */
-  function getHelperIframe() {
-    return env.win.document.querySelector('iframe');
   }
 
   beforeEach(() => {
@@ -91,407 +87,79 @@ describes.realWin('web-push-permission-dialog', {
     sandbox.restore();
   });
 
-  it('should create helper iframe on document', () => {
-    webPush.initializeConfig(webPushConfig);
+  it('should detect opened as popup', () => {
+    setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      expect(getHelperIframe()).to.not.be.null;
+      sandbox.stub(iframeWindow, 'opener', true);
+      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      spy = sandbox.spy(iframeWindow.controller, "isCurrentDialogPopup");
+      iframeWindow.controller.run();
+      expect(spy.returned(true)).to.eq(true);
     });
   });
 
-  it('should receive real reply from helper iframe for permission status query', () => {
-    return setupHelperIframe().then(() => {
-      return webPush.queryNotificationPermission();
-    }).then(permission => {
-      expect(permission).to.eq(NotificationPermission.DEFAULT);
-    });
-  });
-});
-
-describes.realWin('web-push-service widget visibilities', {
-  amp: true,
-}, env => {
-  let win;
-  let webPush;
-  const webPushConfig = {};
-  let iframeWindow = null;
-  let sandbox = null;
-
-  function setDefaultConfigParams_() {
-    webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.PERMISSION_DIALOG_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL] =
-      FAKE_IFRAME_URL;
-  }
-
-  function setupHelperIframe() {
-    webPush.initializeConfig(webPushConfig);
+  it('should detect opened from redirect', () => {
+    setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      const helperIframe = getHelperIframe();
-      iframeWindow = helperIframe.contentWindow;
-      iframeWindow.WindowMessenger = WindowMessenger;
-      iframeWindow.AmpWebPushHelperFrame = AmpWebPushHelperFrame;
-      iframeWindow.controller = new iframeWindow.AmpWebPushHelperFrame({
-        debug: true,
-        windowContext: iframeWindow,
-      });
-      iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
-      return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
-      );
-    });
-  }
-
-  /**
-   * Returns the iframe in this testing AMP iframe that partially matches the
-   * URL set in the test config. Partial matches are possible only since query
-   * parameters are appended to the iframe URL.
-   */
-  function getHelperIframe() {
-    return env.win.document.querySelector('iframe');
-  }
-
-  beforeEach(() => {
-    win = env.win;
-    setDefaultConfigParams_();
-    toggleExperiment(env.win, TAG, true);
-    webPush = new WebPushService(env.ampdoc);
-    sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(() => {
-    toggleExperiment(env.win, TAG, false);
-    sandbox.restore();
-  });
-
-  it('should show blocked widget if permission status query returns blocked', () => {
-    let setWidgetVisibilitiesMock = null;
-    let spy1 = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
-
-      const queryNotificationPermissionStub = sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DENIED));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, true).calledOnce).to.eq(true);
+      sandbox.stub(iframeWindow, 'opener', false);
+      iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
+        encodeURIComponent('https://another-site.com'));
+      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      spy = sandbox.spy(iframeWindow.controller, "isCurrentDialogPopup");
+      iframeWindow.controller.run();
+      expect(spy.returned(true)).to.eq(false);
     });
   });
 
-  it('should show unsubscription widget if reachable SW returns subscribed', () => {
-    let spy = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
-
-      sandbox.stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(true));
-      sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
-    });
-  });
-
-  it('should show subscription widget if permission status query returns default', () => {
-    let spy = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
-
-      sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(false));
-      sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
-    });
-  });
-
-  it('should show subscription widget if reachable SW returns unsubscribed', () => {
-    let spy = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox.spy(webPush, "setWidgetVisibilities");
-
-      sandbox.stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(false));
-      sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
-    });
-  });
-
-  it('should forward amp-web-push-subscription-state message to service worker if reachable', done => {
-    let iframeWindowControllerMock = null;
-
-    return setupHelperIframe().then(() => {
-      sandbox.stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox.stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.GRANTED));
-
-      iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
-      iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
-        if (message.topic === 'amp-web-push-subscription-state') {
-          done();
-        }
-      });
-      return webPush.updateWidgetVisibilities();
-    });
-  });
-});
-
-describes.realWin('web-push-service subscribing', {
-  amp: true,
-}, env => {
-  let win;
-  let webPush;
-  const webPushConfig = {};
-  let iframeWindow = null;
-  let sandbox = null;
-
-  function setDefaultConfigParams_() {
-    webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.PERMISSION_DIALOG_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL] =
-      FAKE_IFRAME_URL;
-  }
-
-  function setupHelperIframe() {
-    webPush.initializeConfig(webPushConfig);
+  it('should request notification permissions, when opened as popup', () => {
+    setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      const helperIframe = getHelperIframe();
-      iframeWindow = helperIframe.contentWindow;
-      iframeWindow.WindowMessenger = WindowMessenger;
-      iframeWindow.AmpWebPushHelperFrame = AmpWebPushHelperFrame;
-      iframeWindow.controller = new iframeWindow.AmpWebPushHelperFrame({
-        debug: true,
-        windowContext: iframeWindow,
-      });
-      iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
-      return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
-      );
-    });
-  }
-
-  /**
-   * Returns the iframe in this testing AMP iframe that partially matches the
-   * URL set in the test config. Partial matches are possible only since query
-   * parameters are appended to the iframe URL.
-   */
-  function getHelperIframe() {
-    return env.win.document.querySelector('iframe');
-  }
-
-  beforeEach(() => {
-    win = env.win;
-    setDefaultConfigParams_();
-    toggleExperiment(env.win, TAG, true);
-    webPush = new WebPushService(env.ampdoc);
-    sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(() => {
-    toggleExperiment(env.win, TAG, false);
-    sandbox.restore();
-  });
-
-  it('should register service worker', () => {
-    let helperFrameSwMessageMock = null;
-
-    return setupHelperIframe().then(() => {
-      helperFrameSwMessageMock = sandbox.mock(iframeWindow.navigator.serviceWorker);
-      helperFrameSwMessageMock.expects('register')
-        .once()
-        .withArgs(webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL], {
-          scope: '/'
-        })
-        .returns(Promise.resolve(true));
-
-      return webPush.registerServiceWorker();
-    }).then(() => {
-      helperFrameSwMessageMock.verify();
+      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
+      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      iframeWindow.controller.run();
+      expect(permissionStub.calledOnce).to.eq(true);
     });
   });
 
-  it('should forward amp-web-push-subscribe message to service worker', done => {
-    let iframeWindowControllerMock = null;
-
-    return setupHelperIframe().then(() => {
-      iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
-      iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
-        if (message.topic === 'amp-web-push-subscribe') {
-          done();
-        }
-      });
-      webPush.subscribeForPushRemotely();
-    });
-  });
-
-  it('should try opening popup as a window and then as a redirect', () => {
-    let openWindowMock = null;
-
-    return setupHelperIframe().then(() => {
-      openWindowMock = sandbox.mock(win);
-      const returningPopupUrl =
-        win.location.href +
-        '?' +
-        WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
-      openWindowMock.expects('open')
-        .withArgs(
-          webPushConfig['permission-dialog-url'] +
-          `?return=${encodeURIComponent(returningPopupUrl)}`, '_blank')
-        .onFirstCall()
-        .returns();
-      openWindowMock.expects('open')
-        .withArgs(
-          webPushConfig['permission-dialog-url'] +
-          `?return=${encodeURIComponent(returningPopupUrl)}`, '_top')
-        .onSecondCall()
-        .returns();
-
-      webPush.openPopupOrRedirect();
-      openWindowMock.verify();
-    });
-  });
-
-  it('should detect continuing subscription from permission dialog redirect', () => {
-    env.ampdoc.win.testLocation.href =
-      'https://a.com/?' + WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
-    expect(webPush.isContinuingSubscriptionFromRedirect()).to.eq(true);
-  });
-
-  it('should remove url fragment if continuing subscription', () => {
-    webPush.initializeConfig(webPushConfig);
-
-    const urlWithSingleParam =
-      'https://a.com/?' + WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
-    const newUrlWithSingleParam =
-      webPush.removePermissionPopupUrlFragmentFromUrl(urlWithSingleParam);
-    expect(newUrlWithSingleParam).to.eq('https://a.com/');
-
-    const urlWithMultipleParams =
-      'https://a.com/?a=1&' + WebPushService.PERMISSION_POPUP_URL_FRAGMENT +
-      '&b=2';
-    const newUrlWithMultipleParams =
-      webPush.removePermissionPopupUrlFragmentFromUrl(urlWithMultipleParams);
-    expect(newUrlWithMultipleParams).to.eq('https://a.com/?a=1&b=2');
-  });
-});
-
-describes.realWin('web-push-service unsubscribing', {
-  amp: true,
-}, env => {
-  let win;
-  let webPush;
-  const webPushConfig = {};
-  let iframeWindow = null;
-  let sandbox = null;
-
-  function setDefaultConfigParams_() {
-    webPushConfig[WebPushConfigAttributes.HELPER_FRAME_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.PERMISSION_DIALOG_URL] =
-      FAKE_IFRAME_URL;
-    webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL] =
-      FAKE_IFRAME_URL;
-  }
-
-  function setupHelperIframe() {
-    webPush.initializeConfig(webPushConfig);
+  it('should request notification permissions, when opened from redirect', () => {
+    setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      const helperIframe = getHelperIframe();
-      iframeWindow = helperIframe.contentWindow;
-      iframeWindow.WindowMessenger = WindowMessenger;
-      iframeWindow.AmpWebPushHelperFrame = AmpWebPushHelperFrame;
-      iframeWindow.controller = new iframeWindow.AmpWebPushHelperFrame({
-        debug: true,
-        windowContext: iframeWindow,
-      });
-      iframeWindow.controller.run(env.win.location.ancestorOrigins[0]);
-      return webPush.frameMessenger_.connect(
-        iframeWindow,
-        '*'
-      );
-    });
-  }
-
-  /**
-   * Returns the iframe in this testing AMP iframe that partially matches the
-   * URL set in the test config. Partial matches are possible only since query
-   * parameters are appended to the iframe URL.
-   */
-  function getHelperIframe() {
-    return env.win.document.querySelector('iframe');
-  }
-
-  beforeEach(() => {
-    win = env.win;
-    setDefaultConfigParams_();
-    toggleExperiment(env.win, TAG, true);
-    webPush = new WebPushService(env.ampdoc);
-    sandbox = sinon.sandbox.create();
-  });
-
-  afterEach(() => {
-    toggleExperiment(env.win, TAG, false);
-    sandbox.restore();
-  });
-
-  it('should forward amp-web-push-unsubscribe message to service worker', done => {
-    let iframeWindowControllerMock = null;
-
-    return setupHelperIframe().then(() => {
-      iframeWindowControllerMock = sandbox.mock(iframeWindow.controller);
-      iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
-        .returns(Promise.resolve(true));
-      sandbox.stub(iframeWindow.controller, 'messageServiceWorker', (message) => {
-        if (message.topic === 'amp-web-push-unsubscribe') {
-          done();
-        }
-      });
-      webPush.unsubscribeFromPushRemotely();
+      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
+      iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
+        encodeURIComponent('https://another-site.com'));
+      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      iframeWindow.controller.run();
+      expect(permissionStub.calledOnce).to.eq(true);
     });
   });
 
-  it('should update widget visibilities after unsubscribing', () => {
-    let unsubscribeStub = null;
-    let updateWidgetStub = null;
-
-    return setupHelperIframe().then(() => {
-      unsubscribeStub = sandbox.stub(webPush, "unsubscribeFromPushRemotely", () => Promise.resolve());
-      updateWidgetStub = sandbox.stub(webPush, "updateWidgetVisibilities", () => Promise.resolve());
-
-      // We've mocked default notification permissions
-      return webPush.unsubscribe();
+  it('should close popup, when opened as popup', () => {
+    let closeStub = null;
+    setupPermissionDialogFrame();
+    return webPush.installHelperFrame(webPushConfig).then(() => {
+      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
+      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      closeStub = sandbox.stub(iframeWindow, 'close', null);
+      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      const sendStub = sandbox.stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
+      return iframeWindow.controller.run();
     }).then(() => {
-      expect(unsubscribeStub.calledOnce).to.eq(true);
-      expect(updateWidgetStub.calledOnce).to.eq(true);
-    });
+      expect(closeStub.calledOnce).to.eq(true);
+    })
+  });
+
+  it('should redirect back to original site, when opened from redirect', () => {
+    setupPermissionDialogFrame();
+    return webPush.installHelperFrame(webPushConfig).then(() => {
+      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
+      iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
+        encodeURIComponent('https://another-site.com'));
+      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      spy = sandbox.spy(iframeWindow.controller, "redirectToUrl");
+      return iframeWindow.controller.run();
+    }).then(() => {
+      expect(spy.withArgs('https://another-site.com').calledOnce).to.eq(true);
+    })
   });
 });

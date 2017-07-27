@@ -29,9 +29,12 @@ export class AmpWebPushPermissionDialog {
     // messengers
     this.debug_ = options && options.debug;
 
+    this.window_ = options.windowContext || window;
+
     // For communication between the AMP page and this permission dialog
     this.ampMessenger = new WindowMessenger({
       debug: this.debug_,
+      windowContext: this.window_,
     });
   }
 
@@ -39,9 +42,9 @@ export class AmpWebPushPermissionDialog {
    * @private
    * @return {boolean}
    */
-  isCurrentDialogPopup_() {
-    return !!window.opener &&
-      window.opener !== window;
+  isCurrentDialogPopup() {
+    return !!this.window_.opener &&
+      this.window_.opener !== this.window_;
   }
 
   /**
@@ -51,7 +54,7 @@ export class AmpWebPushPermissionDialog {
   requestNotificationPermission_() {
     return new Promise((resolve, reject) => {
       try {
-        Notification.requestPermission(permission => resolve(permission));
+        this.window_.Notification.requestPermission(permission => resolve(permission));
       } catch (e) {
         reject(e);
       }
@@ -66,10 +69,10 @@ export class AmpWebPushPermissionDialog {
    * redirected back.
    */
   run() {
-    if (this.isCurrentDialogPopup_()) {
+    if (this.isCurrentDialogPopup()) {
       this.ampMessenger.connect(opener, '*');
 
-      this.requestNotificationPermission_().then(permission => {
+      return this.requestNotificationPermission_().then(permission => {
         return this.ampMessenger.send(
             WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
             permission
@@ -77,19 +80,24 @@ export class AmpWebPushPermissionDialog {
       }).then(result => {
         const message = result[0];
         if (message && message.closeFrame) {
-          window.close();
+          this.window_.close();
         }
       });
     } else {
-      const queryParams = this.parseQueryString(window.location.search);
+      const winLocation = this.window_.fakeLocation || this.window_.location;
+      const queryParams = parseQueryString(winLocation.search);
       if (!queryParams['return']) {
         throw new Error(
           'Expecting return URL query parameter to redirect back.');
       }
-      this.requestNotificationPermission_().then(() => {
-        window.location.href =
-          this.tryDecodeUriComponent(queryParams['return']);
+      const redirectLocation = tryDecodeUriComponent(queryParams['return']);
+      return this.requestNotificationPermission_().then(() => {
+        this.redirectToUrl(redirectLocation);
       });
     }
+  }
+
+  redirectToUrl(url) {
+    this.window_.location.href = url;
   }
 }

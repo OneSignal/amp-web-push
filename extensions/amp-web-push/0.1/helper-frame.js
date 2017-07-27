@@ -27,11 +27,9 @@ import {WindowMessenger} from './window-messenger';
   */
 export class AmpWebPushHelperFrame {
   constructor(options) {
-    if (options && options.debug) {
-      // Debug enables verbose logging for this page and the window and worker
-      // messengers
-      this.debug = true;
-    }
+    // Debug enables verbose logging for this page and the window and worker
+    // messengers
+    this.debug_ = options && options.debug;
 
     this.window_ = options.windowContext || window;
 
