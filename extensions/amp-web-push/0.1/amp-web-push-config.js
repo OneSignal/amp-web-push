@@ -19,6 +19,7 @@ import {Layout} from '../../../src/layout';
 import {getServiceForDoc} from '../../../src/service';
 import {user} from '../../../src/log';
 import {parseUrl} from '../../../src/url';
+import {scopedQuerySelectorAll} from '../../../src/dom';
 
 
 /** @enum {string} */
@@ -69,7 +70,8 @@ export class WebPushConfig extends AMP.BaseElement {
       config[value] = this.element.getAttribute(value);
     }
 
-    if (!this.isValidHelperOrPermissionDialogUrl_(config['helper-iframe-url'])) {
+    if (!this.isValidHelperOrPermissionDialogUrl_(
+        config['helper-iframe-url'])) {
       throw user().createError(`<${CONFIG_TAG}> must have a valid ` +
         'helper-iframe-url attribute. It should begin with ' +
         'the https:// protocol and point to the provided lightweight ' +
@@ -118,7 +120,7 @@ export class WebPushConfig extends AMP.BaseElement {
    * @private
    */
   ensureUniqueElement_() {
-    if (this.win.document.body.querySelectorAll('#' + TAG).length > 1) {
+    if (scopedQuerySelectorAll(this.win.document.body, '#' + TAG).length > 1) {
       throw user().createError(`Only one <${CONFIG_TAG}> element may exist ` +
         'on a page.');
     }

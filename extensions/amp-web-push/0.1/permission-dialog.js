@@ -39,7 +39,6 @@ export class AmpWebPushPermissionDialog {
   }
 
   /**
-   * @private
    * @return {boolean}
    */
   isCurrentDialogPopup() {

@@ -105,7 +105,8 @@ describes.realWin('web-push-config', {
         const element = createConfigElementWithAttributes(webPushConfig);
         expect(() => {
           element.implementation_.validate();
-        }).to.throw(new RegExp('must have a valid ' + configName + ' attribute'));
+        }).to.throw(
+            new RegExp('must have a valid ' + configName + ' attribute'));
       });
       promises.push(promise);
     }

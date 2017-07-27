@@ -118,8 +118,8 @@ export class WebPushService {
     const iframeLoadPromise = this.installHelperFrame();
 
     iframeLoadPromise.then(() => {
-      dev().fine(TAG, `Helper frame ${this.config_['helper-iframe-url']} DOM ` +
-        'loaded. Connecting to the frame via postMessage()...');
+      dev().fine(TAG, `Helper frame ${this.config_['helper-iframe-url']} ` +
+        'DOM loaded. Connecting to the frame via postMessage()...');
       return this.frameMessenger_.connect(
           this.iframe_.getDomElement().contentWindow,
           new URL(this.config_['helper-iframe-url']).origin);
@@ -188,14 +188,12 @@ export class WebPushService {
     return this.iframe_.load();
   }
 
-  /** @private */
   isContinuingSubscriptionFromRedirect() {
     const location = this.ampdoc.win.testLocation || this.ampdoc.win.location;
     return location.search.indexOf(
         WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
   }
 
-  /** @private */
   removePermissionPopupUrlFragmentFromUrl(url) {
     let urlWithoutFragment =
       url.replace(`?${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
@@ -308,7 +306,6 @@ export class WebPushService {
     );
   }
 
-  /** @private */
   querySubscriptionStateRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscription-state',
@@ -316,7 +313,6 @@ export class WebPushService {
     );
   }
 
-  /** @private */
   subscribeForPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscribe',
@@ -324,7 +320,6 @@ export class WebPushService {
     );
   }
 
-  /** @private */
   unsubscribeFromPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-unsubscribe',
@@ -332,7 +327,6 @@ export class WebPushService {
     );
   }
 
-  /** @private */
   isServiceWorkerActivated() {
     const self = this;
     return this.queryServiceWorkerState_().then(
@@ -510,7 +504,6 @@ export class WebPushService {
     });
   }
 
-  /** @private */
   onPermissionDialogInteracted() {
     return new Promise(resolve => {
       this.popupMessenger_.on(
@@ -540,16 +533,16 @@ export class WebPushService {
     };
   }
 
-  /** @private */
   openPopupOrRedirect() {
     // Note: Don't wait on promise chains when opening a pop up, otherwise
     // they'll be blocked
 
-    const pageUrlHasQueryParams = this.ampdoc.win.location.href.indexOf('?') !== -1;
+    const pageUrlHasQueryParams =
+      this.ampdoc.win.location.href.indexOf('?') !== -1;
     const pageUrlQueryParamPrefix = pageUrlHasQueryParams ? '&' : '?';
     // The URL to return to after the permission dialog closes
-    const returningPopupUrl = this.ampdoc.win.location.href + pageUrlQueryParamPrefix +
-      WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
+    const returningPopupUrl = this.ampdoc.win.location.href +
+      pageUrlQueryParamPrefix + WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
 
     const permissionDialogUrlHasQueryParams =
       this.config_['permission-dialog-url'].indexOf('?') !== -1;

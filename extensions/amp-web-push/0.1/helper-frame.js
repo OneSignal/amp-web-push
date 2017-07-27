@@ -14,7 +14,6 @@
  * the License.
  */
 
-import {tryDecodeUriComponent,parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 
  /**
@@ -201,21 +200,22 @@ export class AmpWebPushHelperFrame {
       if (this.isWorkerControllingPage_()) {
         resolve();
       } else {
-        this.window_.navigator.serviceWorker.addEventListener('controllerchange', () => {
+        this.window_.navigator.serviceWorker.addEventListener(
+            'controllerchange', () => {
           // Service worker has been claimed
-          if (this.isWorkerControllingPage_()) {
-            resolve();
-          } else {
-            this.window_.navigator.serviceWorker.controller.addEventListener(
-                'statechange',
-                () => {
-                  if (this.isWorkerControllingPage_()) {
+              if (this.isWorkerControllingPage_()) {
+                resolve();
+              } else {
+                this.window_.navigator.serviceWorker.controller.addEventListener(
+                    'statechange',
+                    () => {
+                      if (this.isWorkerControllingPage_()) {
                   // Service worker has been activated
-                    resolve();
-                  }
-                });
-          }
-        });
+                        resolve();
+                      }
+                    });
+              }
+            });
       }
     });
   }

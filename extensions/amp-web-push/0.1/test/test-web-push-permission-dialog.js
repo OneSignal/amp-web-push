@@ -23,10 +23,6 @@ import {WebPushWidgetVisibilities} from '../amp-web-push-widget';
 import {TAG, CONFIG_TAG, NotificationPermission} from '../vars';
 import {toggleExperiment} from '../../../../src/experiments';
 import {WebPushConfigAttributes} from '../amp-web-push-config';
-import {
-  createIframeWithMessageStub,
-  expectPostMessage,
-} from '../../../../testing/iframe';
 import {parseUrl} from '../../../../src/url';
 import * as sinon from 'sinon';
 
@@ -90,9 +86,9 @@ describes.realWin('web-push-permission-dialog', {
   it('should detect opened as popup', () => {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow, 'opener', true);
-      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox.spy(iframeWindow.controller, 'isCurrentDialogPopup');
+      sandbox./*OK*/stub(iframeWindow, 'opener', true);
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(true);
     });
@@ -101,11 +97,11 @@ describes.realWin('web-push-permission-dialog', {
   it('should detect opened from redirect', () => {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow, 'opener', false);
+      sandbox./*OK*/stub(iframeWindow, 'opener', false);
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
-      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox.spy(iframeWindow.controller, 'isCurrentDialogPopup');
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(false);
     });
@@ -114,8 +110,8 @@ describes.realWin('web-push-permission-dialog', {
   it('should request notification permissions, when opened as popup', () => {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
-      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
+      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
       iframeWindow.controller.run();
       expect(permissionStub.calledOnce).to.eq(true);
     });
@@ -124,10 +120,10 @@ describes.realWin('web-push-permission-dialog', {
   it('should request notification permissions, when opened from redirect', () => {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
+      sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
-      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
       iframeWindow.controller.run();
       expect(permissionStub.calledOnce).to.eq(true);
     });
@@ -137,11 +133,11 @@ describes.realWin('web-push-permission-dialog', {
     let closeStub = null;
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
-      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      closeStub = sandbox.stub(iframeWindow, 'close', null);
-      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
-      const sendStub = sandbox.stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
+      sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      closeStub = sandbox./*OK*/stub(iframeWindow, 'close', null);
+      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      const sendStub = sandbox./*OK*/stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
       return iframeWindow.controller.run();
     }).then(() => {
       expect(closeStub.calledOnce).to.eq(true);
@@ -151,12 +147,12 @@ describes.realWin('web-push-permission-dialog', {
   it('should redirect back to original site, when opened from redirect', () => {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
-      sandbox.stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
+      sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
-      sandbox.stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      const permissionStub = sandbox.stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
-      spy = sandbox.spy(iframeWindow.controller, 'redirectToUrl');
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      spy = sandbox./*OK*/spy(iframeWindow.controller, 'redirectToUrl');
       return iframeWindow.controller.run();
     }).then(() => {
       expect(spy.withArgs('https://another-site.com').calledOnce).to.eq(true);
