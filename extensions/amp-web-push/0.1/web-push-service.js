@@ -408,36 +408,36 @@ export class WebPushService {
   /** @private */
   updateWidgetVisibilitiesServiceWorkerActivated_() {
     return timerFor(this.ampdoc.win).timeoutPromise(
-      5000,
-      this.querySubscriptionStateRemotely().then(reply => {
+        5000,
+        this.querySubscriptionStateRemotely().then(reply => {
         /*
           This Promise will never resolve if the service worker does not support
           amp-web-push, and widgets will stay hidden.
          */
-        switch (this.getSubscriptionStateReplyVersion_(reply)) {
-          case WebPushService.AMP_VERSION_INITIAL:
-            const isSubscribed = reply;
-            if (isSubscribed) {
-              this.setWidgetVisibilities(
-                WebPushWidgetVisibilities.UNSUBSCRIBED, false);
-              this.setWidgetVisibilities(
-                WebPushWidgetVisibilities.SUBSCRIBED, true);
-              this.setWidgetVisibilities(
-                WebPushWidgetVisibilities.BLOCKED, false);
-            } else {
-              this.updateWidgetVisibilitiesUnsubscribed_();
-            }
-            break;
-          default:
+          switch (this.getSubscriptionStateReplyVersion_(reply)) {
+            case WebPushService.AMP_VERSION_INITIAL:
+              const isSubscribed = reply;
+              if (isSubscribed) {
+                this.setWidgetVisibilities(
+                    WebPushWidgetVisibilities.UNSUBSCRIBED, false);
+                this.setWidgetVisibilities(
+                    WebPushWidgetVisibilities.SUBSCRIBED, true);
+                this.setWidgetVisibilities(
+                    WebPushWidgetVisibilities.BLOCKED, false);
+              } else {
+                this.updateWidgetVisibilitiesUnsubscribed_();
+              }
+              break;
+            default:
             /*
               Service worker returned incorrect amp-web-push reply
               (amp-web-push not supported); widgets will stay hidden.
              */
-            break;
-        }
-      }),
-      'This service worker does not support amp-web-push.'
-    )
+              break;
+          }
+        }),
+        'This service worker does not support amp-web-push.'
+    );
   }
 
   /** @private */

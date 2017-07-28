@@ -16,7 +16,7 @@
 
 import {parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
-import { getMode } from '../../../src/mode';
+import {getMode} from '../../../src/mode';
 
  /**
   * @fileoverview

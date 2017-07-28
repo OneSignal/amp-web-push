@@ -121,8 +121,8 @@ export class WebPushConfig extends AMP.BaseElement {
    */
   ensureUniqueElement_() {
     if (scopedQuerySelectorAll(
-      /** @type {!Element} */(this.win.document.body),
-      '#' + TAG).length > 1) {
+      dev().assertElement(this.win.document.body),
+        '#' + TAG).length > 1) {
       throw user().createError(`Only one <${CONFIG_TAG}> element may exist ` +
         'on a page.');
     }
