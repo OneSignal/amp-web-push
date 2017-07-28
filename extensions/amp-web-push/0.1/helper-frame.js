@@ -18,6 +18,27 @@ import {parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 import {getMode} from '../../../src/mode';
 
+/** @typedef {{
+ *    debug: boolean,
+ *    windowContext: (?Window|undefined),
+ * }}
+ */
+AmpWebPush.HelperFrameOptions;
+
+/** @typedef {{
+ *    workerUrl: string,
+ *    registrationOptions: ?{scope: string},
+ * }}
+ */
+AmpWebPush.ServiceWorkerRegistrationMessage;
+
+/** @typedef {{
+ *    topic: string,
+ *    payload: ?,
+ * }}
+ */
+AmpWebPush.ServiceWorkerMessage;
+
  /**
   * @fileoverview
   * Loaded as an invisible iframe on the AMP page, and serving a page on the
@@ -27,6 +48,7 @@ import {getMode} from '../../../src/mode';
   * workers, and enable communication with the registered service worker.
   */
 export class AmpWebPushHelperFrame {
+  /** @param {AmpWebPush.HelperFrameOptions} options */
   constructor(options) {
     // Debug enables verbose logging for this page and the window and worker
     // messengers
@@ -49,10 +71,16 @@ export class AmpWebPushHelperFrame {
     this.allowedWorkerMessageTopics = {};
   }
 
-  /*
-    Ensures replies to the AMP page messenger have a consistent payload format.
+  /**
+   * Ensures replies to the AMP page messenger have a consistent payload format.
+   *
+   * @param {function(?, function())} replyToFrameFunction
+   * @param {boolean} wasSuccessful
+   * @param {?} errorPayload
+   * @param {?} successPayload
+   * @private
    */
-  replyToFrameWithPayload(
+  replyToFrameWithPayload_(
     replyToFrameFunction,
     wasSuccessful,
     errorPayload,
@@ -64,8 +92,13 @@ export class AmpWebPushHelperFrame {
     });
   }
 
+  /**
+   * @param {?} _
+   * @param {function(?, function())} replyToFrame
+   * @private
+   */
   onAmpPageMessageReceivedNotificationPermissionState_(_, replyToFrame) {
-    this.replyToFrameWithPayload(
+    this.replyToFrameWithPayload_(
         replyToFrame,
         true,
         null,
@@ -73,6 +106,11 @@ export class AmpWebPushHelperFrame {
     );
   }
 
+  /**
+   * @param {?} _
+   * @param {function(?, function())} replyToFrame
+   * @private
+   */
   onAmpPageMessageReceivedServiceWorkerState_(_, replyToFrame) {
     const serviceWorkerState = {
       /*
@@ -100,29 +138,37 @@ export class AmpWebPushHelperFrame {
         null,
     };
 
-    this.replyToFrameWithPayload(replyToFrame, true, null, serviceWorkerState);
+    this.replyToFrameWithPayload_(replyToFrame, true, null, serviceWorkerState);
   }
 
-  onAmpPageMessageReceivedServiceWorkerRegistration(message, replyToFrame) {
+  /**
+   * @param {AmpWebPush.ServiceWorkerRegistrationMessage} message
+   * @param {function(?, function())} replyToFrame
+   * @private
+   */
+  onAmpPageMessageReceivedServiceWorkerRegistration_(message, replyToFrame) {
     if (!message || !message.workerUrl || !message.registrationOptions) {
       throw new Error('Expected arguments workerUrl and registrationOptions ' +
-      'in message, got:', message);
+        'in message, got:', message);
     }
 
     this.window_.navigator.serviceWorker.register(
-        message.workerUrl,
-        message.registrationOptions
+      message.workerUrl,
+      message.registrationOptions
     ).then(() => {
-      this.replyToFrameWithPayload(replyToFrame, true, null, null);
+      this.replyToFrameWithPayload_(replyToFrame, true, null, null);
     })
-        .catch(error => {
-          this.replyToFrameWithPayload(replyToFrame, true, null, error ?
-          (error.message || error.toString()) :
-          null
-        );
-        });
+    .catch(error => {
+      this.replyToFrameWithPayload_(replyToFrame, true, null, error ?
+        (error.message || error.toString()) :
+        null
+      );
+    });
   }
 
+  /**
+   * @param {AmpWebPush.ServiceWorkerMessage} message
+  */
   messageServiceWorker(message) {
     this.window_.navigator.serviceWorker.controller./*OK*/postMessage({
       command: message.topic,
@@ -130,6 +176,11 @@ export class AmpWebPushHelperFrame {
     });
   }
 
+  /**
+   * @param {AmpWebPush.ServiceWorkerRegistrationMessage} message
+   * @param {function(?, function())} replyToFrame
+   * @private
+   */
   onAmpPageMessageReceivedServiceWorkerQuery_(message, replyToFrame) {
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
@@ -146,7 +197,7 @@ export class AmpWebPushHelperFrame {
       delete this.allowedWorkerMessageTopics[message.topic];
 
       // The service worker's reply is forwarded back to the AMP page
-      return this.replyToFrameWithPayload(
+      return this.replyToFrameWithPayload_(
           replyToFrame,
           true,
           null,
@@ -155,7 +206,11 @@ export class AmpWebPushHelperFrame {
     });
   }
 
-  getParentOrigin() {
+  /**
+   * @return {?string}
+   * @private
+   */
+  getParentOrigin_() {
     const queryParams = parseQueryString(this.window_.location.search);
     if (!queryParams['parentOrigin']) {
       throw new Error('Expecting parentOrigin URL query parameter.');
@@ -163,6 +218,10 @@ export class AmpWebPushHelperFrame {
     return queryParams['parentOrigin'];
   }
 
+  /**
+   * @param {!Event} event
+   * @private
+   */
   onPageMessageReceivedFromServiceWorker_(event) {
     const {command, payload} = event.data;
     const callbackPromiseResolver = this.allowedWorkerMessageTopics[command];
@@ -174,19 +233,22 @@ export class AmpWebPushHelperFrame {
     // Otherwise, ignore unsolicited messages from the service worker
   }
 
-  /*
-    Service worker postMessage() communication relies on the property
-    navigator.serviceWorker.controller to be non-null. The controller property
-    references the active service worker controlling the page. Without this
-    property, there is no service worker to message.
-
-    The controller property is set when a service worker has successfully
-    registered, installed, and activated a worker, and when a page isn't loaded
-    in a hard refresh mode bypassing the cache.
-
-    It's possible for a service worker to take a second page load to be fully
-    activated.
-   */
+  /**
+    * Service worker postMessage() communication relies on the property
+    * navigator.serviceWorker.controller to be non-null. The controller property
+    * references the active service worker controlling the page. Without this
+    * property, there is no service worker to message.
+    *
+    * The controller property is set when a service worker has successfully
+    * registered, installed, and activated a worker, and when a page isn't
+    * loaded in a hard refresh mode bypassing the cache.
+    *
+    * It's possible for a service worker to take a second page load to be fully
+    * activated.
+    *
+    * @return {boolean}
+    * @private
+    */
   isWorkerControllingPage_() {
     return this.window_.navigator.serviceWorker &&
       this.window_.navigator.serviceWorker.controller &&
@@ -196,6 +258,8 @@ export class AmpWebPushHelperFrame {
   /**
    * Returns a Promise that is resolved when the the page controlling the
    * service worker is activated. This Promise never rejects.
+   *
+   * @return {Promise}
    */
   waitUntilWorkerControlsPage() {
     return new Promise(resolve => {
@@ -251,7 +315,7 @@ export class AmpWebPushHelperFrame {
       this.window_.navigator.serviceWorker.addEventListener('message',
           this.onPageMessageReceivedFromServiceWorker_.bind(this));
     });
-    this.ampMessenger.listen([allowedOrigin || this.getParentOrigin()]);
+    this.ampMessenger.listen([allowedOrigin || this.getParentOrigin_()]);
   }
 }
 

@@ -27,6 +27,7 @@
   which broadcasts the reply back to the AMP page.
  */
 
+ /** @enum {string} */
 const WorkerMessengerCommand = {
   /*
     Used to request the current subscription state.

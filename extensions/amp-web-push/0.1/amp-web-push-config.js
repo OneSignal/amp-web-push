@@ -21,12 +21,25 @@ import {user, dev} from '../../../src/log';
 import {parseUrl} from '../../../src/url';
 import {scopedQuerySelectorAll} from '../../../src/dom';
 
+/** @typedef {{
+ *    'helper-iframe-url': (?string|undefined),
+ *    'permission-dialog-url': (?string|undefined),
+ *    'service-worker-url': (?string|undefined),
+ * }}
+ */
+AmpWebPush.Config;
 
 /** @enum {string} */
 export const WebPushConfigAttributes = {
   HELPER_FRAME_URL: 'helper-iframe-url',
   PERMISSION_DIALOG_URL: 'permission-dialog-url',
   SERVICE_WORKER_URL: 'service-worker-url',
+};
+
+/** @enum {string} */
+export const WebPushWidgetActions = {
+  SUBSCRIBE: 'subscribe',
+  UNSUBSCRIBE: 'unsubscribe',
 };
 
 /**
@@ -53,6 +66,10 @@ export class WebPushConfig extends AMP.BaseElement {
     return layout == Layout.NODISPLAY;
   }
 
+  /**
+   * Validates that this element instance has an ID attribute of 'amp-web-push'
+   * and that there are no other elements of the same tag name.
+   */
   validate() {
     this.ensureSpecificElementId_();
     this.ensureUniqueElement_();
@@ -104,32 +121,8 @@ export class WebPushConfig extends AMP.BaseElement {
   }
 
   /**
-   * Ensures this element is defined with TAG id.
-   *
-   * @private
-   */
-  ensureSpecificElementId_() {
-    if (this.element.getAttribute('id') !== TAG) {
-      throw user().createError(`<${CONFIG_TAG}> must have an id ` +
-        'attribute with value \'' + TAG + '\'.');
-    }
-  }
-
-  /**
-   * Ensures there isn't another page element with the same id.
-   * @private
-   */
-  ensureUniqueElement_() {
-    if (scopedQuerySelectorAll(
-        dev().assertElement(this.win.document.body),
-        '#' + TAG).length > 1) {
-      throw user().createError(`Only one <${CONFIG_TAG}> element may exist ` +
-        'on a page.');
-    }
-  }
-
-  /**
   * Parses the JSON configuration and returns a JavaScript object.
+  * @return {AmpWebPush.Config}
   */
   parseConfig() {
     const config = {};
@@ -155,6 +148,30 @@ export class WebPushConfig extends AMP.BaseElement {
         this.onUnsubscribe_.bind(this));
   }
 
+  /**
+   * Ensures this element is defined with TAG id.
+   * @private
+   */
+  ensureSpecificElementId_() {
+    if (this.element.getAttribute('id') !== TAG) {
+      throw user().createError(`<${CONFIG_TAG}> must have an id ` +
+        'attribute with value \'' + TAG + '\'.');
+    }
+  }
+
+  /**
+   * Ensures there isn't another page element with the same id.
+   * @private
+   */
+  ensureUniqueElement_() {
+    if (scopedQuerySelectorAll(
+        dev().assertElement(this.win.document.body),
+        '#' + TAG).length > 1) {
+      throw user().createError(`Only one <${CONFIG_TAG}> element may exist ` +
+        'on a page.');
+    }
+  }
+
   /** @private */
   onSubscribe_() {
     const webPushService = getServiceForDoc(this.getAmpDoc(), SERVICE_TAG);
@@ -167,7 +184,11 @@ export class WebPushConfig extends AMP.BaseElement {
     webPushService.unsubscribe();
   }
 
-  /** @private */
+  /**
+   * @private
+   * @param {string} url
+   * @return {boolean}
+  */
   isValidHelperOrPermissionDialogUrl_(url) {
     try {
       const parsedUrl = parseUrl(url);
@@ -196,9 +217,3 @@ export class WebPushConfig extends AMP.BaseElement {
     }
   }
 }
-
-/** @enum {string} */
-export const WebPushWidgetActions = {
-  SUBSCRIBE: 'subscribe',
-  UNSUBSCRIBE: 'unsubscribe',
-};
