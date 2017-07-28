@@ -14,8 +14,9 @@
  * the License.
  */
 
-import {tryDecodeUriComponent,parseQueryString} from '../../../src/url.js';
+import {tryDecodeUriComponent, parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
+import {getMode} from '../../../src/mode';
 
 /**
  * @fileoverview
@@ -99,4 +100,11 @@ export class AmpWebPushPermissionDialog {
   redirectToUrl(url) {
     this.window_.location.href = url;
   }
+}
+
+if (!getMode().test) {
+  window.controller = new AmpWebPushPermissionDialog({
+    debug: false,
+  });
+  window.controller.run();
 }
