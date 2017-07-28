@@ -38,11 +38,20 @@
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
-  <amp-weab-push id="random-id-1" visibility="unsubscribed" layout="fixed" width="250" height="80">
-    <button on="tap:random-id-1.subscribe">Subscribe to Notifications</button>
+  <!-- AMP Web Push Extension Configuration -->
+  <amp-web-push-config
+    id="amp-web-push"
+    layout="nodisplay"
+    helper-iframe-url="https://example.com/helper-iframe.html"
+    permission-dialog-url="https://example.com/permission-dialog.html"
+    service-worker-url="https://example.com/service-worker.js"
+  ></amp-web-push-config>
+
+  <amp-web-push visibility="unsubscribed" layout="fixed" width="250" height="80">
+    <button on="tap:amp-web-push.subscribe">Subscribe to Notifications</button>
   </amp-web-push>
-  <amp-web-push id="random-id=2" visibility="subscribed" layout="fixed" width="250" height="80">
-    <button on="tap:random-id-2.unsubscribe">Unsubscribe me from Notifications</button>
+  <amp-web-push visibility="subscribed" layout="fixed" width="250" height="80">
+    <button on="tap:amp-web-push.unsubscribe">Unsubscribe me from Notifications</button>
   </amp-web-push>
   <amp-web-push visibility="blocked" layout="fixed" width="250" height="80">
     Looks like you've blocked notifications!
