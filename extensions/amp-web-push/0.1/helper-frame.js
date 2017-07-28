@@ -14,7 +14,9 @@
  * the License.
  */
 
+import {parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
+import { getMode } from '../../../src/mode';
 
  /**
   * @fileoverview
@@ -34,7 +36,7 @@ export class AmpWebPushHelperFrame {
 
     // For communication between the AMP page and this helper iframe
     this.ampMessenger = new WindowMessenger({
-      debug: this.debug,
+      debug: this.debug_,
       windowContext: this.window_,
     });
 
@@ -154,7 +156,7 @@ export class AmpWebPushHelperFrame {
   }
 
   getParentOrigin() {
-    const queryParams = this.parseQueryString(this.window_.location.search);
+    const queryParams = parseQueryString(this.window_.location.search);
     if (!queryParams['parentOrigin']) {
       throw new Error('Expecting parentOrigin URL query parameter.');
     }
@@ -251,4 +253,11 @@ export class AmpWebPushHelperFrame {
     });
     this.ampMessenger.listen([allowedOrigin || this.getParentOrigin()]);
   }
+}
+
+if (!getMode().test) {
+  window.controller = new AmpWebPushHelperFrame({
+    debug: false,
+  });
+  window.controller.run();
 }
