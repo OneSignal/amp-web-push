@@ -23,9 +23,9 @@ import {loadPromise} from '../../../src/event-helper';
  */
 export class IFrameHost {
   /**
-   * @param {!../../../src/service/ampdoc-impl.AmpDoc} ampdoc
-   * @param {string} url
-   *
+   * @param {!../../../src/service/ampdoc-impl.AmpDoc} ampdoc The AMP document
+   * to add the <iframe> to.
+   * @param {string} url The <iframe> src URL.
    */
   constructor(ampdoc, url) {
     /**
@@ -47,10 +47,10 @@ export class IFrameHost {
     this.domElement_ = null;
 
     /**
-     * @type {Promise|null}
+     * @type {!Promise}
      * @private
      */
-    this.loadPromise_ = null;
+    this.loadPromise_ = new Promise(() => {});
   }
 
   /**
@@ -74,7 +74,6 @@ export class IFrameHost {
 
   /**
    * Returns the IFrame DOM element.
-   *
    * @return {?Element}
    */
   getDomElement() {
@@ -83,8 +82,7 @@ export class IFrameHost {
 
   /**
    * Returns the IFrame DOM element.
-   *
-   * @return {?Promise}
+   * @return {!Promise}
    */
   whenReady() {
     return this.loadPromise_;

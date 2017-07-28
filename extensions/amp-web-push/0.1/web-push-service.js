@@ -24,10 +24,24 @@ import {WindowMessenger} from './window-messenger';
 import {installStyles} from '../../../src/style-installer';
 import {installStylesForShadowRoot} from '../../../src/shadow-embed';
 import {openWindowDialog} from '../../../src/dom';
-import {TAG, WIDGET_TAG, NotificationPermission} from './vars';
+import {
+  TAG,
+  WIDGET_TAG,
+  NotificationPermission,
+  AmpWebPushConfig,
+  ServiceWorkerRegistrationMessage,
+} from './vars';
 import {WebPushWidgetVisibilities} from './amp-web-push-widget';
 import {dev} from '../../../src/log';
-import {timerFor} from '../../../src/services';
+import { timerFor } from '../../../src/services';
+
+/** @typedef {{
+ *    isControllingFrame: boolean,
+ *    state: string,
+ *    url: string,
+ * }}
+ */
+export let ServiceWorkerState;
 
 /**
  * @fileoverview
@@ -41,21 +55,39 @@ import {timerFor} from '../../../src/services';
  */
 export class WebPushService {
 
-  /*
-    In environments where pop ups aren't supported, the AMP page is redirected
-    to a lightweight "permission dialog" page on the canonical origin. After
-    permissions are granted, the page is redirected back to the AMP page.
-
-    This describes the URL query parameter to add to the redirect back to the
-    AMP page, so we know to resume the subscription process.
-
-    We use the History API after to remove this fragment from the URL without
-    affecting the page state.
+  /**
+    * Describes the URL query parameter appended to the URL when the permission
+    * dialog redirects back to the AMP page to continue subscribing.
+    *
+    * In environments where pop ups aren't supported, the AMP page is redirected
+    * to a lightweight "permission dialog" page on the canonical origin. After
+    * permissions are granted, the page is redirected back to the AMP page.
+    *
+    * This describes the URL query parameter to add to the redirect back to the
+    * AMP page, so we know to resume the subscription process.
+    *
+    * We use the History API after to remove this fragment from the URL without
+    * affecting the page state.
+    * @return {string}
    */
   static get PERMISSION_POPUP_URL_FRAGMENT() {
     return 'amp-web-push-subscribing=yes';
   };
 
+  /**
+   * Describes the extension's version a remote service worker supports.
+   *
+   * Service workers are forwarded messages from the AMP page asking for the
+   * subscription state, asking to subscribe, and asking to unsubscribe. Vendors
+   * or individuals controlling their service workers may not update their
+   * service worker even when the AMP extension updates.
+   *
+   * To handle the case where this AMP extension undergoes a couple revisions
+   * and some service workers respond with a v1 reply, some a v2 reply, and
+   * others a v3 reply, we track which version the reply matches and enumerize
+   * it as a human readable description.
+   * @return {number}
+   */
   static get AMP_VERSION_INITIAL() {
     return 1;
   }
@@ -109,9 +141,10 @@ export class WebPushService {
   }
 
   /**
-  * Occurs when the <amp-web-push-config> element loads.
-  * @returns {(Promise|null|undefined)}
-  */
+   * Occurs when the <amp-web-push-config> element loads.
+   * @param {!AmpWebPushConfig} configJson
+   * @returns {!Promise}
+   */
   start(configJson) {
     this.initializeConfig(configJson);
 
@@ -135,20 +168,9 @@ export class WebPushService {
     return iframeLoadPromise;
   }
 
-
-  /**
-   * Returns the IFrame element.
-   *
-   * Visible for testing.
-   */
-  setIframeElement(value) {
-    return this.iframe_ = value;
-  }
-
   /**
    * Parses service configuration and determines environment compatibility.
-   *
-   * @param {!Object} configJson
+   * @param {!AmpWebPushConfig} configJson
    */
   initializeConfig(configJson) {
     dev().fine(TAG, 'amp-web-push extension starting up.');
@@ -168,9 +190,10 @@ export class WebPushService {
   }
 
   /**
-   * Installs the helper IFrame onto the AMP page.
+   * Installs the helper IFrame onto the AMP page and returns a Promise for when
+   * the iframe is loaded.
    *
-   * Visible for testing.
+   * @return {Promise}
    */
   installHelperFrame() {
     // Add a ?parentOrigin=... to let the iframe know which origin to accept
@@ -189,12 +212,22 @@ export class WebPushService {
     return this.iframe_.load();
   }
 
+  /**
+   * Returns true if this AMP page has a special URL query parameter suffix
+   * indicating this page was redirected from the permission dialog.
+   * @return {boolean}
+   */
   isContinuingSubscriptionFromRedirect() {
     const location = this.ampdoc.win.testLocation || this.ampdoc.win.location;
     return location.search.indexOf(
         WebPushService.PERMISSION_POPUP_URL_FRAGMENT) !== -1;
   }
 
+  /**
+   * Given a URL string, returns the URL without the permission dialog URL query
+   * parameter fragment indicating a redirect.
+   * @param {string} url
+   */
   removePermissionPopupUrlFragmentFromUrl(url) {
     let urlWithoutFragment =
       url.replace(`?${WebPushService.PERMISSION_POPUP_URL_FRAGMENT}`, '');
@@ -207,7 +240,6 @@ export class WebPushService {
   /**
    * When developing locally, call this function otherwise we can't run our
    * extension in the example sandbox. Turns off in unit test mode.
-   *
    * @private
    */
   enableAmpExperimentForDevelopment_() {
@@ -219,7 +251,6 @@ export class WebPushService {
   /**
    * Checks that the user enabled this AMP experiment and allows integration
    * tests to access this class in testing mode.
-   *
    * @private
    */
   ensureAmpExperimentEnabled_() {
@@ -230,14 +261,16 @@ export class WebPushService {
   }
 
   /**
-    Waits until the helper iframe has loaded, and then sends the message to the
-    helper iframe and awaits a reply. Errors that are returned are thrown,
-    otherwise the message is returned as a Promise.
-
-    This is used by all of our AMP page <-> helper iframe communications.
-
-    @private
-    @return {Promise<{isControllingFrame:boolean, state:string, url:string}>}
+   * Waits until the helper iframe has loaded, and then sends the message to
+   * the helper iframe and awaits a reply. Errors that are returned are thrown,
+   * otherwise the message is returned as a Promise.
+   *
+   * This is used by all of our AMP page <-> helper iframe communications.
+   *
+   * @param {string} messageTopic
+   * @param {?} message
+   * @return {Promise<?>}
+   * @private
    */
   queryHelperFrame_(messageTopic, message) {
     return this.iframe_.whenReady().then(() => {
@@ -254,13 +287,16 @@ export class WebPushService {
   }
 
   /**
-    Passes messages to the service worker through the helper iframe. Messages
-    are forwarded directly as-is and service worker replies and received as-is
-    without filtering, so that changes in the AMP page and service worker don't
-    require code changes in the helper frame (which lives on the canonical
-    origin).
-
-    @private
+   * Passes messages to the service worker through the helper iframe. Messages
+   * are forwarded directly as-is and service worker replies and received as-is
+   * without filtering, so that changes in the AMP page and service worker don't
+   * require code changes in the helper frame (which lives on the canonical
+   * origin).
+   *
+   * @param {string} messageTopic
+   * @param {?} message
+   * @return {Promise<?>}
+   * @private
    */
   queryServiceWorker_(messageTopic, message) {
     return this.queryHelperFrame_(
@@ -275,6 +311,8 @@ export class WebPushService {
   /**
    * Queries the helper iframe for the notification permission on the canonical
    * origin.
+   *
+   * @return {Promise<NotificationPermission>}
    */
   queryNotificationPermission() {
     return this.queryHelperFrame_(
@@ -283,7 +321,10 @@ export class WebPushService {
     );
   }
 
-  /** @private */
+  /**
+   * @return {Promise<ServiceWorkerState>}
+   * @private
+   */
   queryServiceWorkerState_() {
     return this.queryHelperFrame_(
         WindowMessenger.Topics.SERVICE_WORKER_STATE,
@@ -295,6 +336,7 @@ export class WebPushService {
    * Sends a message to the helper iframe with the service worker URL and
    * registration options and requests the iframe to register the service
    * worker.
+   * @return {Promise<ServiceWorkerRegistrationMessage>}
    */
   registerServiceWorker() {
     return this.queryHelperFrame_(
@@ -307,6 +349,10 @@ export class WebPushService {
     );
   }
 
+  /**
+   * Queries the service worker for the current subscription state.
+   * @return {Promise<ServiceWorkerState>}
+   */
   querySubscriptionStateRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscription-state',
@@ -314,6 +360,10 @@ export class WebPushService {
     );
   }
 
+  /**
+   * Requests the service worker to complete subscribing the user.
+   * @return {Promise}
+   */
   subscribeForPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-subscribe',
@@ -321,6 +371,10 @@ export class WebPushService {
     );
   }
 
+  /**
+   * Requests the service worker to unsubscribe the user from push.
+   * @return {Promise<ServiceWorkerState>}
+   */
   unsubscribeFromPushRemotely() {
     return this.queryServiceWorker_(
         'amp-web-push-unsubscribe',
@@ -328,6 +382,12 @@ export class WebPushService {
     );
   }
 
+  /**
+   * Returns true if the service worker is activated, has the same URL as the
+   * config service-worker-url attribute, and is controlling the AMP page.
+   *
+   * @return {Promise<boolean>}
+   */
   isServiceWorkerActivated() {
     const self = this;
     return this.queryServiceWorkerState_().then(
@@ -346,14 +406,17 @@ export class WebPushService {
   }
 
   /**
-    Sets the visibilities of subscription and unsubscription
-    <amp-web-push> elements.
-
-    Element visibilities change throughout the lifetime of the page: they are
-    initially invisible as their visibilties are determined, and then they
-    either remain hidden or appear. After users subscribe or unsubscribe,
-    visibilties change again.
-  */
+   * Sets the visibilities of subscription and unsubscription <amp-web-push>
+   * elements.
+   *
+   * Element visibilities change throughout the lifetime of the page: they are
+   * initially invisible as their visibilties are determined, and then they
+   * either remain hidden or appear. After users subscribe or unsubscribe,
+   * visibilties change again.
+   *
+   * @param {string} widgetCategoryName
+   * @param {boolean} isVisible
+   */
   setWidgetVisibilities(widgetCategoryName, isVisible) {
     const widgetDomElements = this.ampdoc.getRootNode()
       .querySelectorAll(`${WIDGET_TAG}[visibility=${widgetCategoryName}]`);
@@ -369,7 +432,10 @@ export class WebPushService {
     }
   }
 
-  /** @private */
+  /**
+   * @private
+   * @return {(number|undefined)}
+   */
   getSubscriptionStateReplyVersion_(subscriptionStateReply) {
     if (typeof subscriptionStateReply === 'boolean') {
       return 1;
@@ -380,6 +446,8 @@ export class WebPushService {
    * Queries the helper frame for notification permissions and service worker
    * registration state to compute visibility for subscription and
    * unsubscription widgets.
+   *
+   * @return {Promise}
    */
   updateWidgetVisibilities() {
     return this.queryNotificationPermission().then(notificationPermission => {
@@ -433,10 +501,13 @@ export class WebPushService {
               Service worker returned incorrect amp-web-push reply
               (amp-web-push not supported); widgets will stay hidden.
              */
+              throw user().createError(
+                'The controlling service worker replied to amp-web-push ' +
+                'with an unexpected value.');
               break;
           }
         }),
-        'This service worker does not support amp-web-push.'
+        'The controlling service worker does not support amp-web-push.'
     );
   }
 
@@ -452,6 +523,8 @@ export class WebPushService {
    *
    * This action is exposed from this service and is called from the
    * <amp-web-push> custom element.
+   *
+   * @return {Promise}
    */
   subscribe() {
     this.registerServiceWorker();
@@ -467,6 +540,12 @@ export class WebPushService {
     });
   }
 
+  /**
+   * Processes the result of a user dismissing, granting, or denying
+   * notification permissions when subscribing.
+   *
+   * @param {Array<?>} result
+   */
   handlePermissionDialogInteraction(result) {
     /*
       At this point, the popup most likely opened and we can communicate with it
@@ -474,7 +553,9 @@ export class WebPushService {
       entire page was redirected and our code will resume with our page is
       redirected back.
     */
+    /** @type {NotificationPermission} */
     const permission = result[0];
+    /** @type {function ({closeFrame: boolean})} */
     const reply = result[1];
     switch (permission) {
       case NotificationPermission.DENIED:
@@ -502,6 +583,8 @@ export class WebPushService {
    *
    * This action is exposed from this service and is called from the
    * <amp-web-push> custom element.
+   *
+   * @return {Promise}
    */
   unsubscribe() {
     return this.unsubscribeFromPushRemotely().then(() => {
@@ -509,6 +592,12 @@ export class WebPushService {
     });
   }
 
+  /**
+   * Returns a Promise that resolves when the user dismisses, grants, or denies
+   * notification permissions when subscribing.
+   *
+   * @return {Promise<Array<(NotificationPermission|function({closeFrame: boolean}))>>}
+   */
   onPermissionDialogInteracted() {
     return new Promise(resolve => {
       this.popupMessenger_.on(
@@ -519,7 +608,10 @@ export class WebPushService {
     });
   }
 
-  /** @private */
+  /**
+   * @return {{w: number, h: number, x: number, y: number}}
+   * @private
+   */
   static getPopupDimensions_() {
     /*
       On mobile, pop ups should show up as a full-screen window. The magic
@@ -531,13 +623,16 @@ export class WebPushService {
     const y = Math.floor((screen.height - h) / 2);
 
     return {
-      width: w,
-      height: h,
-      left: x,
-      top: y,
+      w: w,
+      h: h,
+      x: x,
+      y: y,
     };
   }
 
+  /**
+   * Opens a popup or redirects the top-level frame to the permission dialog.
+   */
   openPopupOrRedirect() {
     // Note: Don't wait on promise chains when opening a pop up, otherwise
     // they'll be blocked
@@ -571,6 +666,7 @@ export class WebPushService {
    * If this page is loaded with a special URL query parameter indicating we
    * were just redirected from the permission dialog, then continue subscribing
    * the user and remove the URL query parameter from the URL.
+   *
    * @private
    */
   resumeSubscribingForPushNotifications_() {
@@ -615,7 +711,7 @@ export class WebPushService {
     return this.arePushRelatedApisSupported_() && this.isAmpPageHttps_();
   }
 
-  /*
+  /**
    * Returns true if the Notifications, Service Worker, and Push API are
    * supported.
    *
@@ -625,6 +721,7 @@ export class WebPushService {
    * that AMP, a mobile-only feature, won't be supporting Safari until Safari
    * actually develops mobile push support.
    *
+   * @returns {boolean}
    * @private
    */
   arePushRelatedApisSupported_() {
@@ -634,24 +731,26 @@ export class WebPushService {
   }
 
   /**
-    Both the AMP page and the helper iframe must be HTTPS.
-
-    It's possible for the AMP page to be HTTP; our extension should not
-    initialize in these cases. AMP pages loaded on Google's AMP cache should
-    always be HTTPS (e.g. https://www.google.com/amp/site.com/page.amp.html).
-    However, an AMP page directly accessed on an HTTP site (e.g.
-    http://site.com/page.amp.html) would be HTTP.
-
-    The entire origin chain must be HTTPS to allow communication with the
-    service worker, which is done via the navigator.serviceWorker.controller.
-    navigator.serviceWorker.controller will return null if the AMP page is HTTP.
-
-    This does not prevent subscriptions to HTTP integrations; the helper iframe
-    simply becomes https://customer-subdomain.push-vendor.com
-
-    The helper iframe HTTPS is enforced when checking the configuration.
-
-    @private
+   * Both the AMP page and the helper iframe must be HTTPS.
+   *
+   * It's possible for the AMP page to be HTTP; our extension should not
+   * initialize in these cases. AMP pages loaded on Google's AMP cache should
+   * always be HTTPS (e.g. https://www.google.com/amp/site.com/page.amp.html).
+   * However, an AMP page directly accessed on an HTTP site (e.g.
+   * http://site.com/page.amp.html) would be HTTP.
+   *
+   * The entire origin chain must be HTTPS to allow communication with the
+   * service worker, which is done via the navigator.serviceWorker.controller.
+   * navigator.serviceWorker.controller will return null if the AMP page is
+   * HTTP.
+   *
+   * This does not prevent subscriptions to HTTP integrations; the helper iframe
+   * simply becomes https://customer-subdomain.push-vendor.com
+   *
+   * The helper iframe HTTPS is enforced when checking the configuration.
+   *
+   * @return {boolean}
+   * @private
    */
   isAmpPageHttps_() {
     return this.ampdoc.win.location.protocol === 'https:' ||

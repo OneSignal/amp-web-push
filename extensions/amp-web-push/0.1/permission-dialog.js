@@ -18,6 +18,13 @@ import {tryDecodeUriComponent, parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 import {getMode} from '../../../src/mode';
 
+/** @typedef {{
+ *    debug: boolean,
+ *    windowContext: (?Window|undefined),
+ * }}
+ */
+export let PermissionDialogOptions;
+
 /**
  * @fileoverview
  * The script for the web push notification permission dialog. This script will
@@ -25,6 +32,8 @@ import {getMode} from '../../../src/mode';
  * and forwards results to the AMP page.
  */
 export class AmpWebPushPermissionDialog {
+
+  /** @param {HelperFrameOptions} PermissionDialogOptions */
   constructor(options) {
     // Debug enables verbose logging for this page and the window and worker
     // messengers
@@ -40,6 +49,8 @@ export class AmpWebPushPermissionDialog {
   }
 
   /**
+   * Returns true if this permission dialog is loaded as a popup; returns false
+   * if the permission dialog was redirected to its current location.
    * @return {boolean}
    */
   isCurrentDialogPopup() {
@@ -48,13 +59,14 @@ export class AmpWebPushPermissionDialog {
   }
 
   /**
-   * @private
+   * Wraps the browser Notification API requestPermission() in a promise.
    * @return {!Promise<string>}
    */
-  requestNotificationPermission_() {
+  requestNotificationPermission() {
     return new Promise((resolve, reject) => {
       try {
-        this.window_.Notification.requestPermission(permission => resolve(permission));
+        this.window_.Notification.requestPermission(
+            permission => resolve(permission));
       } catch (e) {
         reject(e);
       }
@@ -62,7 +74,7 @@ export class AmpWebPushPermissionDialog {
   }
 
   /**
-   * Requests notoification permissions and reports the result back to the AMP
+   * Requests notification permissions and reports the result back to the AMP
    * page.
    *
    * If this dialog was redirected instead of opened as a pop up, the page is
@@ -72,7 +84,7 @@ export class AmpWebPushPermissionDialog {
     if (this.isCurrentDialogPopup()) {
       this.ampMessenger.connect(opener, '*');
 
-      return this.requestNotificationPermission_().then(permission => {
+      return this.requestNotificationPermission().then(permission => {
         return this.ampMessenger.send(
             WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
             permission
@@ -91,12 +103,19 @@ export class AmpWebPushPermissionDialog {
           'Expecting return URL query parameter to redirect back.');
       }
       const redirectLocation = tryDecodeUriComponent(queryParams['return']);
-      return this.requestNotificationPermission_().then(() => {
+      return this.requestNotificationPermission().then(() => {
         this.redirectToUrl(redirectLocation);
       });
     }
   }
 
+  /**
+   * Redirects the top-level frame to another URL.
+   *
+   * This is wrapped as a method for testing purposes, because window.location
+   * cannot be mocked.
+   * @param {string} url
+   */
   redirectToUrl(url) {
     this.window_.location.href = url;
   }

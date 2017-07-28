@@ -82,7 +82,7 @@ describes.realWin('web-push-permission-dialog', {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
       sandbox./*OK*/stub(iframeWindow, 'opener', true);
-      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission', () => Promise.resolve());
       const spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(true);
@@ -95,7 +95,7 @@ describes.realWin('web-push-permission-dialog', {
       sandbox./*OK*/stub(iframeWindow, 'opener', false);
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
-      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission', () => Promise.resolve());
       const spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(false);
@@ -129,7 +129,7 @@ describes.realWin('web-push-permission-dialog', {
     setupPermissionDialogFrame();
     return webPush.installHelperFrame(webPushConfig).then(() => {
       sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
-      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission', () => Promise.resolve());
       closeStub = sandbox./*OK*/stub(iframeWindow, 'close', null);
       sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
       sandbox./*OK*/stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
@@ -145,7 +145,7 @@ describes.realWin('web-push-permission-dialog', {
       sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => false);
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
-      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
+      sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission', () => Promise.resolve());
       sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
       const spy = sandbox./*OK*/spy(iframeWindow.controller, 'redirectToUrl');
       return iframeWindow.controller.run();

@@ -30,3 +30,35 @@ export const NotificationPermission = {
    */
   DEFAULT: 'default',
 };
+
+/** @typedef {{
+ *    'helper-iframe-url': (?string|undefined),
+ *    'permission-dialog-url': (?string|undefined),
+ *    'service-worker-url': (?string|undefined),
+ * }}
+ */
+export let AmpWebPushConfig;
+
+/** @typedef {{
+ *    workerUrl: string,
+ *    registrationOptions: ?{scope: string},
+ * }}
+ */
+export let ServiceWorkerRegistrationMessage;
+
+/** @typedef {{
+ *    debug: boolean,
+ *    windowContext: (?Window|undefined),
+ * }}
+ */
+export let MessengerOptions;
+
+/** @typedef {{
+ *    CONNECT_HANDSHAKE: string,
+ *    NOTIFICATION_PERMISSION_STATE: string,
+ *    SERVICE_WORKER_STATE: string,
+ *    SERVICE_WORKER_REGISTRATION: string,
+ *    SERVICE_WORKER_QUERY: string,
+ * }}
+ */
+export let MessengerTopics;

@@ -14,7 +14,7 @@
  * the License.
  */
 
-import {TAG} from './vars';
+import {TAG, MessengerOptions, MessengerTopics} from './vars';
 import {getData} from '../../../src/event-helper';
 import {parseUrl} from '../../../src/url';
 import {dev} from '../../../src/log';
@@ -35,11 +35,14 @@ export class WindowMessenger {
    * Set debug to true to get console logs anytime a message is received,
    * sent, or discarded.
    *
-   * @param {Object} options
+   * @param {MessengerOptions} options
    */
   constructor(options) {
     if (!options) {
-      options = {};
+      options = {
+        debug: false,
+        windowContext: window,
+      };
     }
     /*
      * A map of randomly generated transient unique message IDs to metadata
@@ -74,15 +77,11 @@ export class WindowMessenger {
    * possible and expect a future postMessage() to establish a MessageChannel.
    * The remote frame initiates the connection.
    *
-   * Params:
-   *   - allowedOrigins: A list of string origins to check against when
-   *     receiving connection messages. A message from outside this list of
-   *     origins won't be accepted.
-   *
-   * Returns: A Promise that resolves when another frame successfully
-   *   establishes a messaging channel, or rejects on error.
-   *
-   * @param {Array} allowedOrigins
+   * @param {Array<string>} allowedOrigins A list of string origins to check
+   *     against when receiving connection messages. A message from outside this
+   *     list of origins won't be accepted.
+   * @returns {Promise} A Promise that resolves when another frame successfully
+   *      establishes a messaging channel, or rejects on error.
    */
   listen(allowedOrigins) {
     return new Promise((resolve, reject) => {
@@ -118,7 +117,7 @@ export class WindowMessenger {
     });
   }
 
-  /*
+  /**
    * Determine if a postMessage message came from a trusted origin.
    *
    * Messages can arrive from any origin asking for information, so we want to
@@ -128,8 +127,13 @@ export class WindowMessenger {
    *
    * The message's source origin just needs to be an entry in our list
    * (normalized).
+   *
+   * @param {string} origin
+   * @param {Array<string>} allowedOrigins
+   * @returns {boolean}
+   * @private
    */
-  isAllowedOrigin(origin, allowedOrigins) {
+  isAllowedOrigin_(origin, allowedOrigins) {
     const normalizedOrigin = parseUrl(origin).origin;
     for (let i = 0; i < allowedOrigins.length; i++) {
       const allowedOrigin = allowedOrigins[i];
@@ -142,7 +146,15 @@ export class WindowMessenger {
     return false;
   }
 
-  /** @private */
+  /**
+   * Occurs when the messenger receives its step 1 internal connection message.
+   *
+   * @param {Array<string>} allowedOrigins
+   * @param {function()} resolvePromise
+   * @param {function()} rejectPromise
+   * @param {!Event} messageChannelEvent
+   * @private
+   */
   onListenConnectionMessageReceived_(
     allowedOrigins,
     resolvePromise,
@@ -155,7 +167,7 @@ export class WindowMessenger {
       dev().fine(TAG, 'Window message for listen() connection ' +
         'received:', message);
     }
-    if (!this.isAllowedOrigin(origin, allowedOrigins)) {
+    if (!this.isAllowedOrigin_(origin, allowedOrigins)) {
       dev().fine(TAG, `Discarding connection message from ${origin} ` +
         'because it isn\'t an allowed origin:', message, ' (allowed ' +
         ' origins are)', allowedOrigins);
@@ -189,12 +201,12 @@ export class WindowMessenger {
    * Establishes a message channel with a listening Messenger on another frame.
    * Only call this if listen() has already been called on the remote frame.
    *
-   * Params:
-   *   - remoteWindowContext: The Window context to postMessage() to.
-   *   - expectedRemoteOrigin: The origin the remote frame is required to be
-   *     when receiving the message; the remote message is otherwise discarded.
-   *
-   * @param {(Window|null)} remoteWindowContext
+   * @param {!Window} remoteWindowContext The Window context to postMessage()
+   *     to.
+   * @param {string} expectedRemoteOrigin The origin the remote frame is
+   *     required to be when receiving the message; the remote message is
+   *     otherwise discarded.
+   * @return {Promise}
    */
   connect(remoteWindowContext, expectedRemoteOrigin) {
     return new Promise((resolve, reject) => {
@@ -235,7 +247,14 @@ export class WindowMessenger {
     });
   }
 
-  /** @private */
+  /**
+   * Occurs when the messenger receives its step 2 internal connection message.
+   *
+   * @param {!MessagePort} messagePort
+   * @param {string} expectedRemoteOrigin
+   * @param {function()} resolvePromise
+   * @private
+   */
   onConnectConnectionMessageReceived_(
     messagePort,
     expectedRemoteOrigin,
@@ -257,6 +276,10 @@ export class WindowMessenger {
     resolvePromise();
   }
 
+  /**
+   * Describes the list of available message topics.
+   * @return {!MessengerTopics}
+   */
   static get Topics() {
     return {
       CONNECT_HANDSHAKE: 'topic-connect-handshake',
@@ -271,6 +294,7 @@ export class WindowMessenger {
    * Occurs when a message is received via MessageChannel.
    * Messages received here are trusted (they aren't postMessaged() over).
    *
+   * @param {!Event} event
    * @private
    */
   onChannelMessageReceived_(event) {
@@ -310,6 +334,9 @@ export class WindowMessenger {
    * Subscribes a callback to be fired anytime a new message is received on the
    * topic. Replies to an existing message fire on the existing message promise
    * chain, not on this method, even if the topic matches.
+   *
+   * @param {string} topic
+   * @param {function(...?)} callback
    */
   on(topic, callback) {
     if (this.listeners[topic]) {
@@ -321,6 +348,8 @@ export class WindowMessenger {
 
   /**
    * Removes the mapping subscribing the callback to a new message topic.
+   * @param {string} topic
+   * @param {function(...?)} callback
    */
   off(topic, callback) {
     if (callback) {
@@ -339,7 +368,12 @@ export class WindowMessenger {
   /**
    * id, and topic is supplied by .bind(..). When sendReply is called by the
    * user, only the 'data' parameter is provided
-   *  @private
+   *
+   * @param {string} id
+   * @param {string} topic
+   * @param {JsonObject} data
+   * @return {Promise}
+   * @private
    */
   sendReply_(id, topic, data) {
     const payload = {
@@ -367,14 +401,11 @@ export class WindowMessenger {
   /**
    * Sends a message with the given topic, and data.
    *
-   * Params:
-   *  - topic: A string, but this must match the receiving end that expects this
-   *    topic string.
-   *  - data: Any data that can be serialized using the structured clone
-   *    algorithm.
-   *
-   * @param {string} topic
-   * @param {JsonObject} data
+   * @param {string} topic A string, but this must match the receiving end that
+   *    expects this topic string.
+   * @param {JsonObject} data Any data that can be serialized using the
+   *    structured clone algorithm.
+   * @return {Promise}
    */
   send(topic, data) {
     const payload = {

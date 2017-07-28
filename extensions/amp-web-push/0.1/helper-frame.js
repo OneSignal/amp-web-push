@@ -17,27 +17,21 @@
 import {parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 import {getMode} from '../../../src/mode';
+import {ServiceWorkerRegistrationMessage} from './vars';
 
 /** @typedef {{
  *    debug: boolean,
  *    windowContext: (?Window|undefined),
  * }}
  */
-AmpWebPush.HelperFrameOptions;
-
-/** @typedef {{
- *    workerUrl: string,
- *    registrationOptions: ?{scope: string},
- * }}
- */
-AmpWebPush.ServiceWorkerRegistrationMessage;
+export let HelperFrameOptions;
 
 /** @typedef {{
  *    topic: string,
  *    payload: ?,
  * }}
  */
-AmpWebPush.ServiceWorkerMessage;
+export let ServiceWorkerMessage;
 
  /**
   * @fileoverview
@@ -48,7 +42,8 @@ AmpWebPush.ServiceWorkerMessage;
   * workers, and enable communication with the registered service worker.
   */
 export class AmpWebPushHelperFrame {
-  /** @param {AmpWebPush.HelperFrameOptions} options */
+
+  /** @param {HelperFrameOptions} options */
   constructor(options) {
     // Debug enables verbose logging for this page and the window and worker
     // messengers
@@ -142,7 +137,7 @@ export class AmpWebPushHelperFrame {
   }
 
   /**
-   * @param {AmpWebPush.ServiceWorkerRegistrationMessage} message
+   * @param {ServiceWorkerRegistrationMessage} message
    * @param {function(?, function())} replyToFrame
    * @private
    */
@@ -153,21 +148,21 @@ export class AmpWebPushHelperFrame {
     }
 
     this.window_.navigator.serviceWorker.register(
-      message.workerUrl,
-      message.registrationOptions
+        message.workerUrl,
+        message.registrationOptions
     ).then(() => {
       this.replyToFrameWithPayload_(replyToFrame, true, null, null);
     })
-    .catch(error => {
-      this.replyToFrameWithPayload_(replyToFrame, true, null, error ?
+        .catch(error => {
+          this.replyToFrameWithPayload_(replyToFrame, true, null, error ?
         (error.message || error.toString()) :
         null
       );
-    });
+        });
   }
 
   /**
-   * @param {AmpWebPush.ServiceWorkerMessage} message
+   * @param {ServiceWorkerMessage} message
   */
   messageServiceWorker(message) {
     this.window_.navigator.serviceWorker.controller./*OK*/postMessage({
@@ -177,7 +172,7 @@ export class AmpWebPushHelperFrame {
   }
 
   /**
-   * @param {AmpWebPush.ServiceWorkerRegistrationMessage} message
+   * @param {ServiceWorkerRegistrationMessage} message
    * @param {function(?, function())} replyToFrame
    * @private
    */

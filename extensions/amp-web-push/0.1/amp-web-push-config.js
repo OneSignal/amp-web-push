@@ -14,20 +14,12 @@
  * the License.
  */
 
-import {TAG, CONFIG_TAG, SERVICE_TAG} from './vars';
+import {TAG, CONFIG_TAG, SERVICE_TAG, AmpWebPushConfig} from './vars';
 import {Layout} from '../../../src/layout';
 import {getServiceForDoc} from '../../../src/service';
 import {user, dev} from '../../../src/log';
 import {parseUrl} from '../../../src/url';
 import {scopedQuerySelectorAll} from '../../../src/dom';
-
-/** @typedef {{
- *    'helper-iframe-url': (?string|undefined),
- *    'permission-dialog-url': (?string|undefined),
- *    'service-worker-url': (?string|undefined),
- * }}
- */
-AmpWebPush.Config;
 
 /** @enum {string} */
 export const WebPushConfigAttributes = {
@@ -122,7 +114,7 @@ export class WebPushConfig extends AMP.BaseElement {
 
   /**
   * Parses the JSON configuration and returns a JavaScript object.
-  * @return {AmpWebPush.Config}
+  * @return {AmpWebPushConfig}
   */
   parseConfig() {
     const config = {};
