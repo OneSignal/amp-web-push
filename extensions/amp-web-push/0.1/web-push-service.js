@@ -27,6 +27,7 @@ import {openWindowDialog} from '../../../src/dom';
 import {TAG, WIDGET_TAG, NotificationPermission} from './vars';
 import {WebPushWidgetVisibilities} from './amp-web-push-widget';
 import {dev} from '../../../src/log';
+import {timerFor} from '../../../src/services';
 
 /**
  * @fileoverview
@@ -406,33 +407,37 @@ export class WebPushService {
 
   /** @private */
   updateWidgetVisibilitiesServiceWorkerActivated_() {
-    return this.querySubscriptionStateRemotely().then(reply => {
-      /*
-        This Promise will never resolve if the service worker does not support
-        amp-web-push, and widgets will stay hidden.
-       */
-      switch (this.getSubscriptionStateReplyVersion_(reply)) {
-        case WebPushService.AMP_VERSION_INITIAL:
-          const isSubscribed = reply;
-          if (isSubscribed) {
-            this.setWidgetVisibilities(
+    return timerFor(this.ampdoc.win).timeoutPromise(
+      5000,
+      this.querySubscriptionStateRemotely().then(reply => {
+        /*
+          This Promise will never resolve if the service worker does not support
+          amp-web-push, and widgets will stay hidden.
+         */
+        switch (this.getSubscriptionStateReplyVersion_(reply)) {
+          case WebPushService.AMP_VERSION_INITIAL:
+            const isSubscribed = reply;
+            if (isSubscribed) {
+              this.setWidgetVisibilities(
                 WebPushWidgetVisibilities.UNSUBSCRIBED, false);
-            this.setWidgetVisibilities(
+              this.setWidgetVisibilities(
                 WebPushWidgetVisibilities.SUBSCRIBED, true);
-            this.setWidgetVisibilities(
+              this.setWidgetVisibilities(
                 WebPushWidgetVisibilities.BLOCKED, false);
-          } else {
-            this.updateWidgetVisibilitiesUnsubscribed_();
-          }
-          break;
-        default:
-          /*
-            Service worker returned incorrect amp-web-push reply
-            (amp-web-push not supported); widgets will stay hidden.
-           */
-          break;
-      }
-    });
+            } else {
+              this.updateWidgetVisibilitiesUnsubscribed_();
+            }
+            break;
+          default:
+            /*
+              Service worker returned incorrect amp-web-push reply
+              (amp-web-push not supported); widgets will stay hidden.
+             */
+            break;
+        }
+      }),
+      'This service worker does not support amp-web-push.'
+    )
   }
 
   /** @private */
