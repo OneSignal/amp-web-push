@@ -17,7 +17,7 @@
 import {TAG, CONFIG_TAG, SERVICE_TAG} from './vars';
 import {Layout} from '../../../src/layout';
 import {getServiceForDoc} from '../../../src/service';
-import {user} from '../../../src/log';
+import {user, dev} from '../../../src/log';
 import {parseUrl} from '../../../src/url';
 import {scopedQuerySelectorAll} from '../../../src/dom';
 
@@ -121,7 +121,7 @@ export class WebPushConfig extends AMP.BaseElement {
    */
   ensureUniqueElement_() {
     if (scopedQuerySelectorAll(
-      dev().assertElement(this.win.document.body),
+        dev().assertElement(this.win.document.body),
         '#' + TAG).length > 1) {
       throw user().createError(`Only one <${CONFIG_TAG}> element may exist ` +
         'on a page.');

@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-import {getMode} from '../../../../src/mode';
 import {WindowMessenger} from '../window-messenger';
-import {IFrameHost} from '../iframehost';
 import {AmpWebPushHelperFrame} from '../helper-frame';
 import {WebPushService} from '../web-push-service';
 import {WebPushWidgetVisibilities} from '../amp-web-push-widget';
-import {TAG, CONFIG_TAG, NotificationPermission} from '../vars';
+import {TAG, NotificationPermission} from '../vars';
 import {toggleExperiment} from '../../../../src/experiments';
 import {WebPushConfigAttributes} from '../amp-web-push-config';
 import * as sinon from 'sinon';
@@ -31,11 +29,9 @@ const FAKE_IFRAME_URL =
 describes.realWin('web-push-service environment support', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
 
   beforeEach(() => {
-    win = env.win;
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);
   });
@@ -82,7 +78,6 @@ describes.realWin('web-push-service environment support', {
 describes.realWin('web-push-service helper frame messaging', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
   const webPushConfig = {};
   let iframeWindow = null;
@@ -126,7 +121,6 @@ describes.realWin('web-push-service helper frame messaging', {
   }
 
   beforeEach(() => {
-    win = env.win;
     setDefaultConfigParams_();
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);
@@ -157,7 +151,6 @@ describes.realWin('web-push-service helper frame messaging', {
 describes.realWin('web-push-service widget visibilities', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
   const webPushConfig = {};
   let iframeWindow = null;
@@ -201,7 +194,6 @@ describes.realWin('web-push-service widget visibilities', {
   }
 
   beforeEach(() => {
-    win = env.win;
     setDefaultConfigParams_();
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);
@@ -214,13 +206,11 @@ describes.realWin('web-push-service widget visibilities', {
   });
 
   it('should show blocked widget if permission status query returns blocked', () => {
-    const setWidgetVisibilitiesMock = null;
-    const spy1 = null;
-
+    let spy = null;
     return setupHelperIframe().then(() => {
       spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
 
-      const queryNotificationPermissionStub = sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DENIED));
+      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DENIED));
 
       // We've mocked default notification permissions
       return webPush.updateWidgetVisibilities();
@@ -310,7 +300,6 @@ describes.realWin('web-push-service widget visibilities', {
 describes.realWin('web-push-service subscribing', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
   const webPushConfig = {};
   let iframeWindow = null;
@@ -354,7 +343,6 @@ describes.realWin('web-push-service subscribing', {
   }
 
   beforeEach(() => {
-    win = env.win;
     setDefaultConfigParams_();
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);
@@ -404,9 +392,9 @@ describes.realWin('web-push-service subscribing', {
     let openWindowMock = null;
 
     return setupHelperIframe().then(() => {
-      openWindowMock = sandbox./*OK*/mock(win);
+      openWindowMock = sandbox./*OK*/mock(env.win);
       const returningPopupUrl =
-        win.location.href +
+        env.win.location.href +
         '?' +
         WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
       openWindowMock.expects('open')
@@ -454,7 +442,6 @@ describes.realWin('web-push-service subscribing', {
 describes.realWin('web-push-service unsubscribing', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
   const webPushConfig = {};
   let iframeWindow = null;
@@ -498,7 +485,6 @@ describes.realWin('web-push-service unsubscribing', {
   }
 
   beforeEach(() => {
-    win = env.win;
     setDefaultConfigParams_();
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);

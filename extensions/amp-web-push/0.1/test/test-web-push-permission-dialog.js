@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-import {getMode} from '../../../../src/mode';
 import {WindowMessenger} from '../window-messenger';
-import {IFrameHost} from '../iframehost';
 import {AmpWebPushPermissionDialog} from '../permission-dialog';
 import {WebPushService} from '../web-push-service';
-import {WebPushWidgetVisibilities} from '../amp-web-push-widget';
-import {TAG, CONFIG_TAG, NotificationPermission} from '../vars';
+import {TAG} from '../vars';
 import {toggleExperiment} from '../../../../src/experiments';
 import {WebPushConfigAttributes} from '../amp-web-push-config';
 import {parseUrl} from '../../../../src/url';
@@ -32,7 +29,6 @@ const FAKE_IFRAME_URL =
 describes.realWin('web-push-permission-dialog', {
   amp: true,
 }, env => {
-  let win;
   let webPush;
   const webPushConfig = {};
   let iframeWindow = null;
@@ -71,7 +67,6 @@ describes.realWin('web-push-permission-dialog', {
   }
 
   beforeEach(() => {
-    win = env.win;
     setDefaultConfigParams_();
     toggleExperiment(env.win, TAG, true);
     webPush = new WebPushService(env.ampdoc);
@@ -88,7 +83,7 @@ describes.realWin('web-push-permission-dialog', {
     return webPush.installHelperFrame(webPushConfig).then(() => {
       sandbox./*OK*/stub(iframeWindow, 'opener', true);
       sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
+      const spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(true);
     });
@@ -101,7 +96,7 @@ describes.realWin('web-push-permission-dialog', {
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
       sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
+      const spy = sandbox./*OK*/spy(iframeWindow.controller, 'isCurrentDialogPopup');
       iframeWindow.controller.run();
       expect(spy.returned(true)).to.eq(false);
     });
@@ -136,8 +131,8 @@ describes.realWin('web-push-permission-dialog', {
       sandbox./*OK*/stub(iframeWindow.controller, 'isCurrentDialogPopup', () => true);
       sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
       closeStub = sandbox./*OK*/stub(iframeWindow, 'close', null);
-      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
-      const sendStub = sandbox./*OK*/stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
+      sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      sandbox./*OK*/stub(iframeWindow.controller.ampMessenger, 'send', () => Promise.resolve([{closeFrame: true}]));
       return iframeWindow.controller.run();
     }).then(() => {
       expect(closeStub.calledOnce).to.eq(true);
@@ -151,8 +146,8 @@ describes.realWin('web-push-permission-dialog', {
       iframeWindow.fakeLocation = parseUrl('https://test.com/?return=' +
         encodeURIComponent('https://another-site.com'));
       sandbox./*OK*/stub(iframeWindow.controller, 'requestNotificationPermission_', () => Promise.resolve());
-      const permissionStub = sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
-      spy = sandbox./*OK*/spy(iframeWindow.controller, 'redirectToUrl');
+      sandbox./*OK*/stub(iframeWindow.Notification, 'requestPermission', () => Promise.resolve('default'));
+      const spy = sandbox./*OK*/spy(iframeWindow.controller, 'redirectToUrl');
       return iframeWindow.controller.run();
     }).then(() => {
       expect(spy.withArgs('https://another-site.com').calledOnce).to.eq(true);
