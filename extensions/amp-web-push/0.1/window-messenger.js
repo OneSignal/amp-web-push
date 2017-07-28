@@ -14,20 +14,36 @@
  * the License.
  */
 
-import {TAG, MessengerOptions, MessengerTopics} from './vars';
+import {TAG} from './vars';
 import {getData} from '../../../src/event-helper';
 import {parseUrl} from '../../../src/url';
 import {dev} from '../../../src/log';
+
+/** @typedef {{
+ *    CONNECT_HANDSHAKE: string,
+ *    NOTIFICATION_PERMISSION_STATE: string,
+ *    SERVICE_WORKER_STATE: string,
+ *    SERVICE_WORKER_REGISTRATION: string,
+ *    SERVICE_WORKER_QUERY: string,
+ * }}
+ */
+export let MessengerTopics;
+
+/** @typedef {{
+ *    debug: boolean,
+ *    windowContext: (?Window|undefined),
+ * }}
+ */
+export let MessengerOptions;
 
  /**
  * @fileoverview
  * A Promise-based PostMessage helper to ease back-and-forth replies.
  *
  * This class is included separately a second time, by websites running
- * amp-web-push, as well as by other push vendors, in a remote
- * website's iframe. It should therefore keep external depenencies to a minimum,
- * since this class must be transpiled to ES5 and "duplicated" outside of the
- * AMP SDK bundle.
+ * amp-web-push, as well as by other push vendors, in a remote website's iframe.
+ * It should therefore keep external depenencies to a minimum, since this class
+ * must be transpiled to ES5 and "duplicated" outside of the AMP SDK bundle.
  */
 export class WindowMessenger {
 
@@ -49,26 +65,26 @@ export class WindowMessenger {
      * describing incoming replies and outgoing sends. Just used to internally
      * keep track of replies and sends.
      */
-    this.messages = {};
+    this.messages_ = {};
     /**
      * A map of string topic names to callbacks listeners interested in replies
      * to the topic.
      *
      * @type {(Object<string,Array>|null)}
      */
-    this.listeners = {};
-    this.debug = options.debug;
-    this.listening = false;
-    this.connecting = false;
-    this.connected = false;
-    this.channel = null;
+    this.listeners_ = {};
+    this.debug_ = options.debug;
+    this.listening_ = false;
+    this.connecting_ = false;
+    this.connected_ = false;
+    this.channel_ = null;
 
     /** @type {MessagePort} */
-    this.messagePort = null;
+    this.messagePort_ = null;
 
-    this.onListenConnectionMessageReceivedProc = null;
-    this.onConnectConnectionMessageReceivedProc = null;
-    this.onChannelMessageReceivedProc = null;
+    this.onListenConnectionMessageReceivedProc_ = null;
+    this.onConnectConnectionMessageReceivedProc_ = null;
+    this.onChannelMessageReceivedProc_ = null;
     this.window_ = options.windowContext || window;
   }
 
@@ -85,11 +101,11 @@ export class WindowMessenger {
    */
   listen(allowedOrigins) {
     return new Promise((resolve, reject) => {
-      if (this.connected) {
+      if (this.connected_) {
         reject(new Error('Already connected.'));
         return;
       }
-      if (this.listening) {
+      if (this.listening_) {
         reject(new Error('Already listening for connections.'));
         return;
       }
@@ -98,7 +114,7 @@ export class WindowMessenger {
           'allowed origins to accept messages from. Got:', allowedOrigins));
         return;
       }
-      this.onListenConnectionMessageReceivedProc =
+      this.onListenConnectionMessageReceivedProc_ =
         this.onListenConnectionMessageReceived_.bind(
             this,
             allowedOrigins,
@@ -107,13 +123,13 @@ export class WindowMessenger {
         );
       this.window_.addEventListener('message',
         /** @type {(function (Event): (boolean|undefined)|null)} */
-        (this.onListenConnectionMessageReceivedProc));
-      if (this.debug) {
+        (this.onListenConnectionMessageReceivedProc_));
+      if (this.debug_) {
         dev().fine(TAG, 'Listening for a connection message...');
       }
     }).then(() => {
       this.send(WindowMessenger.Topics.CONNECT_HANDSHAKE, null);
-      this.connected = true;
+      this.connected_ = true;
     });
   }
 
@@ -163,7 +179,7 @@ export class WindowMessenger {
   ) {
     const message = getData(messageChannelEvent);
     const {origin, ports: messagePorts} = messageChannelEvent;
-    if (this.debug) {
+    if (this.debug_) {
       dev().fine(TAG, 'Window message for listen() connection ' +
         'received:', message);
     }
@@ -186,14 +202,14 @@ export class WindowMessenger {
     // don't get spammed with cross-domain messages
     this.window_.removeEventListener('message',
         /** @type {(function (Event): (boolean|undefined)|null)} */
-        (this.onListenConnectionMessageReceivedProc));
+        (this.onListenConnectionMessageReceivedProc_));
     // Get the message port
-    this.messagePort = messagePorts[0];
-    this.onChannelMessageReceivedProc =
+    this.messagePort_ = messagePorts[0];
+    this.onChannelMessageReceivedProc_ =
       this.onChannelMessageReceived_.bind(this);
-    this.messagePort.addEventListener('message',
-        this.onChannelMessageReceivedProc, false);
-    this.messagePort.start();
+    this.messagePort_.addEventListener('message',
+        this.onChannelMessageReceivedProc_, false);
+    this.messagePort_.start();
     resolvePromise();
   }
 
@@ -217,32 +233,32 @@ export class WindowMessenger {
         reject(new Error('Provide an expected origin for the remote Window ' +
         'or provide the wildcard *.'));
       }
-      if (this.connected) {
+      if (this.connected_) {
         reject(new Error('Already connected.'));
         return;
       }
-      if (this.connecting) {
+      if (this.connecting_) {
         reject(new Error('Already connecting.'));
         return;
       }
-      this.channel = new MessageChannel();
-      this.messagePort = this.channel.port1;
-      this.onConnectConnectionMessageReceivedProc =
+      this.channel_ = new MessageChannel();
+      this.messagePort_ = this.channel_.port1;
+      this.onConnectConnectionMessageReceivedProc_ =
         this.onConnectConnectionMessageReceived_.bind(
             this,
-            this.messagePort,
+            this.messagePort_,
             expectedRemoteOrigin,
             resolve)
         ;
-      this.messagePort.addEventListener('message',
-          this.onConnectConnectionMessageReceivedProc);
-      this.messagePort.start();
+      this.messagePort_.addEventListener('message',
+          this.onConnectConnectionMessageReceivedProc_);
+      this.messagePort_.start();
       remoteWindowContext./*OK*/postMessage(
         /** @type {JsonObject} */ ({
           topic: WindowMessenger.Topics.CONNECT_HANDSHAKE,
         }), expectedRemoteOrigin === '*' ?
                 '*' :
-                parseUrl(expectedRemoteOrigin).origin, [this.channel.port2]);
+                parseUrl(expectedRemoteOrigin).origin, [this.channel_.port2]);
       dev().fine(TAG, `Opening channel to ${expectedRemoteOrigin}...`);
     });
   }
@@ -260,19 +276,19 @@ export class WindowMessenger {
     expectedRemoteOrigin,
     resolvePromise) {
     // This is the remote frame's reply to our initial handshake topic message
-    this.connected = true;
-    if (this.debug) {
+    this.connected_ = true;
+    if (this.debug_) {
       dev().fine(TAG, `Messenger channel to ${expectedRemoteOrigin} ` +
         'established.');
     }
     // Remove our message handler
     messagePort.removeEventListener('message',
-        this.onConnectConnectionMessageReceivedProc);
+        this.onConnectConnectionMessageReceivedProc_);
     // Install a new message handler for receiving normal messages
-    this.onChannelMessageReceivedProc =
+    this.onChannelMessageReceivedProc_ =
       this.onChannelMessageReceived_.bind(this);
     messagePort.addEventListener('message',
-        this.onChannelMessageReceivedProc, false);
+        this.onChannelMessageReceivedProc_, false);
     resolvePromise();
   }
 
@@ -299,13 +315,13 @@ export class WindowMessenger {
    */
   onChannelMessageReceived_(event) {
     const message = getData(event);
-    if (this.messages[message['id']] && message['isReply']) {
-      const existingMessage = this.messages[message['id']];
-      delete this.messages[message['id']];
+    if (this.messages_[message['id']] && message['isReply']) {
+      const existingMessage = this.messages_[message['id']];
+      delete this.messages_[message['id']];
       const promiseResolver = existingMessage.promiseResolver;
         // Set new incoming message data on existing message
       existingMessage.message = message['data'];
-      if (this.debug) {
+      if (this.debug_) {
         dev().fine(TAG, `Received reply for topic '${message['topic']}':`,
             message['data']);
       }
@@ -314,11 +330,11 @@ export class WindowMessenger {
         this.sendReply_.bind(this, message['id'], existingMessage['topic']),
       ]);
     } else {
-      const listeners = this.listeners[message['topic']];
+      const listeners = this.listeners_[message['topic']];
       if (!listeners) {
         return;
       }
-      if (this.debug) {
+      if (this.debug_) {
         dev().fine(TAG, 'Received new message for ' +
           `topic '${message['topic']}': ${message['data']}`);
       }
@@ -339,10 +355,10 @@ export class WindowMessenger {
    * @param {function(...?)} callback
    */
   on(topic, callback) {
-    if (this.listeners[topic]) {
-      this.listeners[topic].push(callback);
+    if (this.listeners_[topic]) {
+      this.listeners_[topic].push(callback);
     } else {
-      this.listeners[topic] = [callback];
+      this.listeners_[topic] = [callback];
     }
   }
 
@@ -353,14 +369,14 @@ export class WindowMessenger {
    */
   off(topic, callback) {
     if (callback) {
-      const callbackIndex = this.listeners[topic].indexOf(callback);
+      const callbackIndex = this.listeners_[topic].indexOf(callback);
       if (callbackIndex !== -1) {
-        this.listeners[topic].splice(callbackIndex, 1);
+        this.listeners_[topic].splice(callbackIndex, 1);
       }
     } else {
       // No specific callback provided; remove all listeners for topic
-      if (this.listeners[topic]) {
-        delete this.listeners[topic];
+      if (this.listeners_[topic]) {
+        delete this.listeners_[topic];
       }
     }
   }
@@ -387,10 +403,10 @@ export class WindowMessenger {
      origin, otherwise the message is not sent. Since we just got a message, we
      already know the receipient's origin.
      */
-    this.messagePort./*OK*/postMessage(payload);
+    this.messagePort_./*OK*/postMessage(payload);
 
     return new Promise(resolve => {
-      this.messages[payload.id] = {
+      this.messages_[payload.id] = {
         message: data,
         topic,
         promiseResolver: resolve,
@@ -413,13 +429,13 @@ export class WindowMessenger {
       topic,
       data,
     };
-    if (this.debug) {
+    if (this.debug_) {
       dev().fine(TAG, `Sending ${topic}:`, data);
     }
-    this.messagePort./*OK*/postMessage(payload);
+    this.messagePort_./*OK*/postMessage(payload);
 
     return new Promise(resolve => {
-      this.messages[payload.id] = {
+      this.messages_[payload.id] = {
         message: data,
         topic,
         promiseResolver: resolve,

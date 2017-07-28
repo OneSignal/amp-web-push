@@ -33,16 +33,25 @@ export let PermissionDialogOptions;
  */
 export class AmpWebPushPermissionDialog {
 
-  /** @param {HelperFrameOptions} PermissionDialogOptions */
+  /** @param {PermissionDialogOptions} options */
   constructor(options) {
-    // Debug enables verbose logging for this page and the window and worker
-    // messengers
+    /**
+     * Debug enables verbose logging for this page and the window and worker
+     * messengers
+     * @private {boolean}
+     */
     this.debug_ = options && options.debug;
 
+    /**
+     * @private {!Window}
+     */
     this.window_ = options.windowContext || window;
 
-    // For communication between the AMP page and this permission dialog
-    this.ampMessenger = new WindowMessenger({
+    /**
+     * For communication between the AMP page and this helper iframe
+     * @private {./window-messenger.WindowMessenger}
+     */
+    this.ampMessenger_ = new WindowMessenger({
       debug: this.debug_,
       windowContext: this.window_,
     });
@@ -82,10 +91,10 @@ export class AmpWebPushPermissionDialog {
    */
   run() {
     if (this.isCurrentDialogPopup()) {
-      this.ampMessenger.connect(opener, '*');
+      this.ampMessenger_.connect(opener, '*');
 
       return this.requestNotificationPermission().then(permission => {
-        return this.ampMessenger.send(
+        return this.ampMessenger_.send(
             WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
             permission
         );

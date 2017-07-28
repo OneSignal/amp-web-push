@@ -28,12 +28,10 @@ import {
   TAG,
   WIDGET_TAG,
   NotificationPermission,
-  AmpWebPushConfig,
-  ServiceWorkerRegistrationMessage,
 } from './vars';
 import {WebPushWidgetVisibilities} from './amp-web-push-widget';
 import {dev} from '../../../src/log';
-import { timerFor } from '../../../src/services';
+import {timerFor} from '../../../src/services';
 
 /** @typedef {{
  *    isControllingFrame: boolean,
@@ -42,6 +40,21 @@ import { timerFor } from '../../../src/services';
  * }}
  */
 export let ServiceWorkerState;
+
+/** @typedef {{
+ *    workerUrl: string,
+ *    registrationOptions: ?{scope: string},
+ * }}
+ */
+export let ServiceWorkerRegistrationMessage;
+
+/** @typedef {{
+ *    'helper-iframe-url': (?string|undefined),
+ *    'permission-dialog-url': (?string|undefined),
+ *    'service-worker-url': (?string|undefined),
+ * }}
+ */
+export let AmpWebPushConfig;
 
 /**
  * @fileoverview
@@ -502,7 +515,7 @@ export class WebPushService {
               (amp-web-push not supported); widgets will stay hidden.
              */
               throw user().createError(
-                'The controlling service worker replied to amp-web-push ' +
+                  'The controlling service worker replied to amp-web-push ' +
                 'with an unexpected value.');
               break;
           }
@@ -623,10 +636,10 @@ export class WebPushService {
     const y = Math.floor((screen.height - h) / 2);
 
     return {
-      w: w,
-      h: h,
-      x: x,
-      y: y,
+      w,
+      h,
+      x,
+      y,
     };
   }
 

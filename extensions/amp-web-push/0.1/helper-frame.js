@@ -17,21 +17,30 @@
 import {parseQueryString} from '../../../src/url.js';
 import {WindowMessenger} from './window-messenger';
 import {getMode} from '../../../src/mode';
-import {ServiceWorkerRegistrationMessage} from './vars';
 
-/** @typedef {{
- *    debug: boolean,
- *    windowContext: (?Window|undefined),
+/**
+ * @typedef {{
+ *   debug: boolean,
+ *   windowContext: (?Window|undefined),
  * }}
  */
 export let HelperFrameOptions;
 
-/** @typedef {{
+/**
+ * @typedef {{
  *    topic: string,
  *    payload: ?,
  * }}
  */
 export let ServiceWorkerMessage;
+
+/**
+ * @typedef {{
+ *    workerUrl: string,
+ *    registrationOptions: ?{scope: string},
+ * }}
+ */
+export let ServiceWorkerRegistrationMessage;
 
  /**
   * @fileoverview
@@ -43,27 +52,42 @@ export let ServiceWorkerMessage;
   */
 export class AmpWebPushHelperFrame {
 
-  /** @param {HelperFrameOptions} options */
+  /** @param {!HelperFrameOptions} options */
   constructor(options) {
-    // Debug enables verbose logging for this page and the window and worker
-    // messengers
+    /**
+     * Debug enables verbose logging for this page and the window and worker
+     * messengers
+     * @type {boolean}
+     * @private
+     */
     this.debug_ = options && options.debug;
 
+    /**
+     * @type {!Window}
+     * @private
+     */
     this.window_ = options.windowContext || window;
 
-    // For communication between the AMP page and this helper iframe
-    this.ampMessenger = new WindowMessenger({
+    /**
+     * For communication between the AMP page and this helper iframe
+     * @type {!./window-messenger.WindowMessenger}
+     * @private
+     */
+    this.ampMessenger_ = new WindowMessenger({
       debug: this.debug_,
       windowContext: this.window_,
     });
 
-    /*
-      Describes the messages we allow through from the service worker. Whenever
-      the AMP page sends a 'query service worker' message with a topic string,
-      we add the topic to the allowed list, and wait for the service worker to
-      reply. Once we get a reply, we remove it from the allowed topics.
+    /**
+     * Describes the messages we allow through from the service worker. Whenever
+     * the AMP page sends a 'query service worker' message with a topic string,
+     * we add the topic to the allowed list, and wait for the service worker to
+     * reply. Once we get a reply, we remove it from the allowed topics.
+     *
+     * @type {!Object}
+     * @private
      */
-    this.allowedWorkerMessageTopics = {};
+    this.allowedWorkerMessageTopics_ = {};
   }
 
   /**
@@ -182,14 +206,14 @@ export class AmpWebPushHelperFrame {
     }
     new Promise(resolve => {
       // Allow this message through, just for the next time it's received
-      this.allowedWorkerMessageTopics[message.topic] = resolve;
+      this.allowedWorkerMessageTopics_[message.topic] = resolve;
 
       // The AMP message is forwarded to the service worker
       this.waitUntilWorkerControlsPage().then(() => {
         this.messageServiceWorker(message);
       });
     }).then(workerReplyPayload => {
-      delete this.allowedWorkerMessageTopics[message.topic];
+      delete this.allowedWorkerMessageTopics_[message.topic];
 
       // The service worker's reply is forwarded back to the AMP page
       return this.replyToFrameWithPayload_(
@@ -219,7 +243,7 @@ export class AmpWebPushHelperFrame {
    */
   onPageMessageReceivedFromServiceWorker_(event) {
     const {command, payload} = event.data;
-    const callbackPromiseResolver = this.allowedWorkerMessageTopics[command];
+    const callbackPromiseResolver = this.allowedWorkerMessageTopics_[command];
 
     if (typeof callbackPromiseResolver === 'function') {
       // Resolve the waiting listener with the worker's reply payload
@@ -267,11 +291,12 @@ export class AmpWebPushHelperFrame {
               if (this.isWorkerControllingPage_()) {
                 resolve();
               } else {
-                this.window_.navigator.serviceWorker.controller.addEventListener(
+                this.window_.navigator.serviceWorker.controller
+                    .addEventListener(
                     'statechange',
                     () => {
                       if (this.isWorkerControllingPage_()) {
-                  // Service worker has been activated
+                        // Service worker has been activated
                         resolve();
                       }
                     });
@@ -289,19 +314,19 @@ export class AmpWebPushHelperFrame {
    * allowedOrigin since test environments cannot access the parent origin.
    */
   run(allowedOrigin) {
-    this.ampMessenger.on(
+    this.ampMessenger_.on(
         WindowMessenger.Topics.NOTIFICATION_PERMISSION_STATE,
         this.onAmpPageMessageReceivedNotificationPermissionState_.bind(this)
     );
-    this.ampMessenger.on(
+    this.ampMessenger_.on(
         WindowMessenger.Topics.SERVICE_WORKER_STATE,
         this.onAmpPageMessageReceivedServiceWorkerState_.bind(this)
     );
-    this.ampMessenger.on(
+    this.ampMessenger_.on(
         WindowMessenger.Topics.SERVICE_WORKER_REGISTRATION,
-        this.onAmpPageMessageReceivedServiceWorkerRegistration.bind(this)
+        this.onAmpPageMessageReceivedServiceWorkerRegistration_.bind(this)
     );
-    this.ampMessenger.on(
+    this.ampMessenger_.on(
         WindowMessenger.Topics.SERVICE_WORKER_QUERY,
         this.onAmpPageMessageReceivedServiceWorkerQuery_.bind(this)
     );
@@ -310,7 +335,7 @@ export class AmpWebPushHelperFrame {
       this.window_.navigator.serviceWorker.addEventListener('message',
           this.onPageMessageReceivedFromServiceWorker_.bind(this));
     });
-    this.ampMessenger.listen([allowedOrigin || this.getParentOrigin_()]);
+    this.ampMessenger_.listen([allowedOrigin || this.getParentOrigin_()]);
   }
 }
 

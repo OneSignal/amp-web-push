@@ -139,7 +139,7 @@ describes.realWin('web-push-service helper frame messaging', {
     });
   });
 
-  it('should receive real reply from helper iframe for permission status query', () => {
+  it('should receive reply from helper iframe for permission query', () => {
     return setupHelperIframe().then(() => {
       return webPush.queryNotificationPermission();
     }).then(permission => {
@@ -205,93 +205,151 @@ describes.realWin('web-push-service widget visibilities', {
     sandbox.restore();
   });
 
-  it('should show blocked widget if permission status query returns blocked', () => {
+  it('should show blocked widget if permission query returns blocked', () => {
     let spy = null;
     return setupHelperIframe().then(() => {
       spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
 
-      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DENIED));
+      sandbox./*OK*/stub(
+          webPush,
+          'queryNotificationPermission',
+          () => Promise.resolve(NotificationPermission.DENIED)
+      );
 
       // We've mocked default notification permissions
       return webPush.updateWidgetVisibilities();
     }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, true).calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false)
+          .calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false)
+          .calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, true)
+          .calledOnce).to.eq(true);
     });
   });
 
-  it('should show unsubscription widget if reachable SW returns subscribed', () => {
+  it('should show unsubscription widget if reachable SW returns subscribed',
+      () => {
+        let spy = null;
+
+        return setupHelperIframe().then(() => {
+          spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
+
+          sandbox./*OK*/stub(
+              webPush, 'querySubscriptionStateRemotely',
+              () => Promise.resolve(true)
+      );
+          sandbox./*OK*/stub(
+              webPush, 'isServiceWorkerActivated',
+              () => Promise.resolve(true)
+      );
+          sandbox./*OK*/stub(
+              webPush, 'queryNotificationPermission',
+              () => Promise.resolve(NotificationPermission.DEFAULT)
+      );
+
+      // We've mocked default notification permissions
+          return webPush.updateWidgetVisibilities();
+        }).then(() => {
+          expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false)
+              .calledOnce).to.eq(true);
+          expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, true)
+              .calledOnce).to.eq(true);
+          expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false)
+              .calledOnce).to.eq(true);
+        });
+      });
+
+  it('should show subscription widget if permission query returns default',
+      () => {
+        let spy = null;
+
+        return setupHelperIframe().then(() => {
+          spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
+
+          sandbox./*OK*/stub(
+              webPush,
+              'isServiceWorkerActivated',
+              () => Promise.resolve(false)
+      );
+          sandbox./*OK*/stub(
+              webPush,
+              'queryNotificationPermission',
+              () => Promise.resolve(NotificationPermission.DEFAULT)
+      );
+
+      // We've mocked default notification permissions
+          return webPush.updateWidgetVisibilities();
+        }).then(() => {
+          expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true)
+              .calledOnce).to.eq(true);
+          expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false)
+              .calledOnce).to.eq(true);
+          expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false)
+              .calledOnce).to.eq(true);
+        });
+      });
+
+  it('should show subscription widget if SW returns unsubscribed', () => {
     let spy = null;
 
     return setupHelperIframe().then(() => {
       spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
 
-      sandbox./*OK*/stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(true));
-      sandbox./*OK*/stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
+      sandbox./*OK*/stub(
+          webPush,
+          'querySubscriptionStateRemotely',
+          () => Promise.resolve(false)
+      );
+      sandbox./*OK*/stub(
+          webPush,
+          'isServiceWorkerActivated',
+          () => Promise.resolve(true)
+      );
+      sandbox./*OK*/stub(
+          webPush,
+          'queryNotificationPermission',
+          () => Promise.resolve(NotificationPermission.DEFAULT)
+      );
 
       // We've mocked default notification permissions
       return webPush.updateWidgetVisibilities();
     }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true)
+          .calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false)
+          .calledOnce).to.eq(true);
+      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false)
+          .calledOnce).to.eq(true);
     });
   });
 
-  it('should show subscription widget if permission status query returns default', () => {
-    let spy = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
-
-      sandbox./*OK*/stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(false));
-      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
-    });
-  });
-
-  it('should show subscription widget if reachable SW returns unsubscribed', () => {
-    let spy = null;
-
-    return setupHelperIframe().then(() => {
-      spy = sandbox./*OK*/spy(webPush, 'setWidgetVisibilities');
-
-      sandbox./*OK*/stub(webPush, 'querySubscriptionStateRemotely', () => Promise.resolve(false));
-      sandbox./*OK*/stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.DEFAULT));
-
-      // We've mocked default notification permissions
-      return webPush.updateWidgetVisibilities();
-    }).then(() => {
-      expect(spy.withArgs(WebPushWidgetVisibilities.UNSUBSCRIBED, true).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.SUBSCRIBED, false).calledOnce).to.eq(true);
-      expect(spy.withArgs(WebPushWidgetVisibilities.BLOCKED, false).calledOnce).to.eq(true);
-    });
-  });
-
-  it('should forward amp-web-push-subscription-state message to service worker if reachable', done => {
+  it('should forward amp-web-push-subscription-state message to SW', done => {
     let iframeWindowControllerMock = null;
 
     return setupHelperIframe().then(() => {
-      sandbox./*OK*/stub(webPush, 'isServiceWorkerActivated', () => Promise.resolve(true));
-      sandbox./*OK*/stub(webPush, 'queryNotificationPermission', () => Promise.resolve(NotificationPermission.GRANTED));
+      sandbox./*OK*/stub(
+          webPush,
+          'isServiceWorkerActivated',
+          () => Promise.resolve(true)
+      );
+      sandbox./*OK*/stub(
+          webPush,
+          'queryNotificationPermission',
+          () => Promise.resolve(NotificationPermission.GRANTED)
+      );
 
       iframeWindowControllerMock = sandbox./*OK*/mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
           .returns(Promise.resolve(true));
-      sandbox./*OK*/stub(iframeWindow.controller, 'messageServiceWorker', message => {
-        if (message.topic === 'amp-web-push-subscription-state') {
-          done();
-        }
-      });
+      sandbox./*OK*/stub(
+          iframeWindow.controller,
+          'messageServiceWorker',
+          message => {
+            if (message.topic === 'amp-web-push-subscription-state') {
+              done();
+            }
+          });
       return webPush.updateWidgetVisibilities();
     });
   });
@@ -358,10 +416,14 @@ describes.realWin('web-push-service subscribing', {
     let helperFrameSwMessageMock = null;
 
     return setupHelperIframe().then(() => {
-      helperFrameSwMessageMock = sandbox./*OK*/mock(iframeWindow.navigator.serviceWorker);
+      helperFrameSwMessageMock = sandbox./*OK*/mock(
+          iframeWindow.navigator.serviceWorker
+      );
       helperFrameSwMessageMock.expects('register')
           .once()
-          .withArgs(webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL], {
+          .withArgs(
+          webPushConfig[WebPushConfigAttributes.SERVICE_WORKER_URL],
+          {
             scope: '/',
           })
           .returns(Promise.resolve(true));
@@ -372,18 +434,21 @@ describes.realWin('web-push-service subscribing', {
     });
   });
 
-  it('should forward amp-web-push-subscribe message to service worker', done => {
+  it('should forward amp-web-push-subscribe message to SW', done => {
     let iframeWindowControllerMock = null;
 
     return setupHelperIframe().then(() => {
       iframeWindowControllerMock = sandbox./*OK*/mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
           .returns(Promise.resolve(true));
-      sandbox./*OK*/stub(iframeWindow.controller, 'messageServiceWorker', message => {
-        if (message.topic === 'amp-web-push-subscribe') {
-          done();
-        }
-      });
+      sandbox./*OK*/stub(
+          iframeWindow.controller,
+          'messageServiceWorker',
+          message => {
+            if (message.topic === 'amp-web-push-subscribe') {
+              done();
+            }
+          });
       webPush.subscribeForPushRemotely();
     });
   });
@@ -415,11 +480,12 @@ describes.realWin('web-push-service subscribing', {
     });
   });
 
-  it('should detect continuing subscription from permission dialog redirect', () => {
-    env.ampdoc.win.testLocation.href =
-      'https://a.com/?' + WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
-    expect(webPush.isContinuingSubscriptionFromRedirect()).to.eq(true);
-  });
+  it('should detect continuing subscription from permission dialog redirect',
+      () => {
+        env.ampdoc.win.testLocation.href =
+        'https://a.com/?' + WebPushService.PERMISSION_POPUP_URL_FRAGMENT;
+        expect(webPush.isContinuingSubscriptionFromRedirect()).to.eq(true);
+      });
 
   it('should remove url fragment if continuing subscription', () => {
     webPush.initializeConfig(webPushConfig);
@@ -496,18 +562,21 @@ describes.realWin('web-push-service unsubscribing', {
     sandbox.restore();
   });
 
-  it('should forward amp-web-push-unsubscribe message to service worker', done => {
+  it('should forward amp-web-push-unsubscribe message to SW', done => {
     let iframeWindowControllerMock = null;
 
     return setupHelperIframe().then(() => {
       iframeWindowControllerMock = sandbox./*OK*/mock(iframeWindow.controller);
       iframeWindowControllerMock.expects('waitUntilWorkerControlsPage')
           .returns(Promise.resolve(true));
-      sandbox./*OK*/stub(iframeWindow.controller, 'messageServiceWorker', message => {
-        if (message.topic === 'amp-web-push-unsubscribe') {
-          done();
-        }
-      });
+      sandbox./*OK*/stub(
+          iframeWindow.controller,
+          'messageServiceWorker',
+          message => {
+            if (message.topic === 'amp-web-push-unsubscribe') {
+              done();
+            }
+          });
       webPush.unsubscribeFromPushRemotely();
     });
   });
@@ -517,8 +586,16 @@ describes.realWin('web-push-service unsubscribing', {
     let updateWidgetStub = null;
 
     return setupHelperIframe().then(() => {
-      unsubscribeStub = sandbox./*OK*/stub(webPush, 'unsubscribeFromPushRemotely', () => Promise.resolve());
-      updateWidgetStub = sandbox./*OK*/stub(webPush, 'updateWidgetVisibilities', () => Promise.resolve());
+      unsubscribeStub = sandbox./*OK*/stub(
+          webPush,
+          'unsubscribeFromPushRemotely',
+          () => Promise.resolve()
+      );
+      updateWidgetStub = sandbox./*OK*/stub(
+          webPush,
+          'updateWidgetVisibilities',
+          () => Promise.resolve()
+      );
 
       // We've mocked default notification permissions
       return webPush.unsubscribe();

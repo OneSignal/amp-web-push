@@ -14,7 +14,7 @@
  * the License.
  */
 
-import {TAG, CONFIG_TAG, SERVICE_TAG, AmpWebPushConfig} from './vars';
+import {TAG, CONFIG_TAG, SERVICE_TAG} from './vars';
 import {Layout} from '../../../src/layout';
 import {getServiceForDoc} from '../../../src/service';
 import {user, dev} from '../../../src/log';
@@ -33,6 +33,14 @@ export const WebPushWidgetActions = {
   SUBSCRIBE: 'subscribe',
   UNSUBSCRIBE: 'unsubscribe',
 };
+
+/** @typedef {{
+ *    'helper-iframe-url': (?string|undefined),
+ *    'permission-dialog-url': (?string|undefined),
+ *    'service-worker-url': (?string|undefined),
+ * }}
+ */
+export let AmpWebPushConfig;
 
 /**
  * @fileoverview
