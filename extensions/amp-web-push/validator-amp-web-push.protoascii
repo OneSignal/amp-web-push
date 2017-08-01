@@ -35,17 +35,26 @@ tags: {  # <amp-web-push> element tag
   }
   attrs: {
     name: "helper-iframe-url"
-    value_regex: "https:\/\/.*"
+    value_url: {
+      allowed_protocol: "https"
+      allow_relative: false
+    }
     mandatory: true
   }
   attrs: {
     name: "permission-dialog-url"
-    value_regex: "https:\/\/.*"
+    value_url: {
+      allowed_protocol: "https"
+      allow_relative: false
+    }
     mandatory: true
   }
   attrs: {
     name: "service-worker-url"
-    value_regex: "https:\/\/.*"
+    value_url: {
+      allowed_protocol: "https"
+      allow_relative: false
+    }
     mandatory: true
   }
   attr_lists: "extended-amp-global"
