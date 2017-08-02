@@ -972,6 +972,7 @@ function buildWebPushPublisherFile(version, fileName, watch, options) {
     .pipe($$.file(builtName, js))
     .pipe(gulp.dest(tempBuildDir)))
     .then(function () {
+      console.warn('1');
       return compileJs('./' + tempBuildDir, builtName, './' + distDir, {
         watch: watch,
         includePolyfills: true,
@@ -980,20 +981,6 @@ function buildWebPushPublisherFile(version, fileName, watch, options) {
         preventRemoveAndMakeDir: options.preventRemoveAndMakeDir,
         latestName: latestName,
       });
-    })
-    .then(function () {
-      if (fs.existsSync(distDir + minifiedName)) {
-        // Build Helper Frame HTML
-        var fileContents = fs.readFileSync(basePath + fileName + '.html', 'utf8');
-        fileContents = fileContents.replace(
-          '<!-- [GULP-MAGIC-REPLACE ' + fileName + '.js] -->',
-          '<script>' + fs.readFileSync(distDir + minifiedName, 'utf8') +
-          '</script>'
-        );
-
-        fs.writeFileSync('dist/v0/' + fileName + '.html',
-          fileContents);
-      }
     });
 }
 
