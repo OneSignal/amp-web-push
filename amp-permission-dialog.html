@@ -3,6 +3,7 @@
 <!-- AMP Web Push Permission Dialog -->
 
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta charset="utf-8">
   <style>
     html, body {
@@ -15,11 +16,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 15px;
     }
 
     #subscribe-message {
-      font-size: 24px;
+      font-size: 22px;
       font-family: sans-serif;
+      text-align: center;
     }
   </style>
   <script>(function(){var f,g=function(a){return"undefined"!=typeof window&&window===a?a:"undefined"!=typeof global?global:a}(this);function k(a,b){b=void 0===b?"":b;try{return decodeURIComponent(a)}catch(c){return b}};var m=/(?:^[#?]?|&)([^=&]+)(?:=([^&]*))?/g;function n(a){var b=Object.create(null);if(!a)return b;for(var c;c=m.exec(a);){var d=k(c[1],c[1]).trim(),e=c[2]?k(c[2],c[2]).trim():"";b[d]=e}return b};Date.now();self.log=self.log||{user:null,dev:null,userForEmbed:null};var p,q;
@@ -38,6 +41,6 @@ w.prototype.redirectToUrl=function(a){this.a.location.href=a};window._ampWebPush
 <script src="https://cdn.onesignal.com/sdks/amp-permission-dialog.js"></script>
 </head>
 <body>
-    <p>Click Allow to receive notifications.</p>
+  <p id="subscribe-message">Click Allow to receive notifications.</p>
 </body>
 </html>

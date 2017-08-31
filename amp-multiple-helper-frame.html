@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<!-- AMP Web Push Multiple Helper IFrame for sites with multiple subscription origins -->
+
+<head>
+  <meta charset="utf-8">
+</head>
+<body>
+  <script src="https://onesignal.com/sdks/amp-http-helper-frame.js"></script>
+  <script>
+    try {
+      if (localStorage && localStorage.getItem('_LOG') == "yes") {
+        _LOG = true;
+      }
+    } catch (e) { }
+    window.runAmpWebPushHelperFrame([
+      /*
+        Below this comment, add a list of URLs where users have existing
+        subscriptions, with the path to the remote helper frame file.
+
+        Any origin belonging to onesignal.com or os.tc should use the following
+        format to the remote helper file:
+
+        - (for subdomain.onesignal.com)
+          https://your-old-subdomain.onesignal.com/amp/remote_frame?appId=YOUR-APP-ID
+        - (for subdomain.os.tc)
+          https://your-old-subdomain.os.tc/amp/remote_frame?appId=YOUR-APP-ID
+
+        Don't forget to replace YOUR-APP-ID with your actual app ID.
+
+        By this point in the AMP setup, you should have already:
+
+        a) Downloaded a remote "amp-http-remote-frame.js" file
+
+        b) Created a "remote_frame.html" file that includes the
+        "amp-http-remote-frame.js" script
+
+        c) Uploaded this "remote_frame.html" to each of the URLs where users
+        have existing subscriptions
+
+        ----------------
+
+        Note 1: Do not include the main site where new users are getting
+        subscribed. This list should only include:
+
+        a) Sites that have existing subscriptions
+
+        b) Sites that are being used as a OneSignal app
+
+        Note 2: A couple examples are below. If they don't apply, remove them.
+       */
+       'https://your-old-subdomain.onesignal.com/amp/remote_frame?appId=YOUR-APP-ID',
+       'https://your-old-subdomain.os.tc/amp/remote_frame?appId=YOUR-APP-ID'
+    ]);
+  </script>
+</body>
+</html>

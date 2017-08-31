@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<!-- AMP Web Push Remote Helper IFrame for sites with multiple subscription origins -->
+
+<head>
+  <meta charset="utf-8">
+</head>
+<body>
+  This is the AMP remote frame file.
+  <script>
+    try {
+      if (localStorage && localStorage.getItem('_LOG') == "yes") {
+        _LOG = true;
+      }
+    } catch (e) { }
+  </script>
+  <script src="https://onesignal.com/sdks/amp-http-remote-frame.js"></script>
+</body>
+</html>
