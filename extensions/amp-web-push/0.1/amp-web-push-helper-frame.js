@@ -18,7 +18,6 @@ import {TAG} from './vars';
 import {WindowMessenger} from './window-messenger';
 import {getMode} from '../../../src/mode';
 import {parseQueryString} from '../../../src/url.js';
-import {user} from '../../../src/log';
 
 /**
  * @typedef {{
@@ -172,7 +171,7 @@ export class AmpWebPushHelperFrame {
       if (message && message.key && this.window_.localStorage) {
         storageValue = this.window_.localStorage.getItem(message.key);
       } else {
-        user().warn(TAG, 'LocalStorage retrieval failed.');
+        console.warn(`[AMP Web Push Helper Frame] Failed to retrieve key '${message.key}' from LocalStorage.`);
       }
     } catch (e) {
       // LocalStorage may not be accessible
@@ -250,6 +249,10 @@ export class AmpWebPushHelperFrame {
    * @param {ServiceWorkerMessage} message
   */
   messageServiceWorker(message) {
+    console.warn("[AMP Web Push Helper Frame] Sending a postMessage to the service worker controller:", {
+      command: message.topic,
+      payload: message.payload,
+    });
     this.window_.navigator.serviceWorker.controller./*OK*/ postMessage({
       command: message.topic,
       payload: message.payload,
@@ -262,6 +265,7 @@ export class AmpWebPushHelperFrame {
    * @private
    */
   onAmpPageMessageReceivedServiceWorkerQuery_(message, replyToFrame) {
+    console.warn("[AMP Web Push Helper Frame] Received a message from the service worker:", message);
     if (!message || !message.topic) {
       throw new Error('Expected argument topic in message, got:', message);
     }
@@ -412,8 +416,9 @@ export class AmpWebPushHelperFrame {
 }
 
 if (!getMode().test) {
+  console.warn(`[AMP Web Push Helper Frame] Starting up.`);
   window._ampWebPushHelperFrame = new AmpWebPushHelperFrame({
-    debug: false,
+    debug: true,
   });
   window._ampWebPushHelperFrame.run();
 }

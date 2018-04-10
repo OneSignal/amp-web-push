@@ -143,11 +143,11 @@ export class WebPushService {
    * @returns {!Promise}
    */
   start(configJson) {
-    dev().fine(TAG, 'amp-web-push extension starting up.');
+    console.warn(TAG, '[AMP Web Push Service] Starting up.');
 
     // Exit early if web push isn't supported
     if (!this.environmentSupportsWebPush()) {
-      user().warn(TAG, 'Web push is not supported.');
+      console.warn(TAG, '[AMP Web Push Service] Web push is not supported.');
       return Promise.reject('Web push is not supported');
     }
 
@@ -158,9 +158,9 @@ export class WebPushService {
 
     iframeLoadPromise
         .then(() => {
-          dev().fine(
+          console.warn(
               TAG,
-              `Helper frame ${this.config_['helper-iframe-url']} ` +
+              `[AMP Web Push Service] Helper frame ${this.config_['helper-iframe-url']} ` +
             'DOM loaded. Connecting to the frame via postMessage()...'
           );
           return this.frameMessenger_.connect(

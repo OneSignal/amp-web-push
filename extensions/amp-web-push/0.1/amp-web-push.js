@@ -26,12 +26,14 @@
 
 import {CONFIG_TAG, SERVICE_TAG, TAG, WIDGET_TAG} from './vars';
 import {CSS} from '../../../build/amp-web-push-0.1.css';
+import {user} from '../../../src/log';
 import {WebPushConfig} from './amp-web-push-config';
 import {WebPushService} from './web-push-service';
 import {WebPushWidget} from './amp-web-push-widget';
 
 
 AMP.extension(TAG, '0.1', AMP => {
+  console.warn(TAG, 'amp-web-push extension starting up.');
   AMP.registerServiceForDoc(SERVICE_TAG, WebPushService);
   AMP.registerElement(CONFIG_TAG, WebPushConfig);
   AMP.registerElement(WIDGET_TAG, WebPushWidget, CSS);
